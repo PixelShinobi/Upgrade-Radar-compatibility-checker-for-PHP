@@ -206,18 +206,18 @@ function upgrade_radar_e2e_full(): void {
 	upgrade_radar_e2e_check( count( $verdicts ) >= 37, sprintf( 'The results list every active plugin, the theme and its parent theme (%d rows)', count( $verdicts ) ) );
 
 	$expected = array(
-		'UR E2E Legacy Forms'   => array( 'update_first', 'Version 2.0 is available' ),
-		'UR E2E New Sliders'    => array( 'update_first', "hasn't checked this version" ),
-		'UR E2E Legacy Gallery' => array( 'no_compatible_version', 'latest version' ),
-		'UR E2E Media Tools'    => array( 'ready', '4 possible false alarms' ),
-		'UR E2E Custom Tools'   => array( 'needs_developer', "can't check this for updates" ),
-		'UR E2E Single File'    => array( 'needs_developer', "can't check this for updates" ),
-		'UR E2E Deprecations'   => array( 'ready', 'deprecation warnings' ),
-		'UR E2E Big Data'       => array( 'ready', 'No problems found' ),
-		'UR E2E Modern'         => array( 'ready', 'No problems found' ),
-		'UR E2E Pack 13'        => array( 'ready', '' ),
-		'UR E2E Child'          => array( 'ready', 'deprecation warning' ),
-		'Twenty Twenty-Five'    => array( 'ready', '' ),
+		'Example Legacy Forms'   => array( 'update_first', 'Version 2.0 is available' ),
+		'Example New Sliders'    => array( 'update_first', "hasn't checked this version" ),
+		'Example Legacy Gallery' => array( 'no_compatible_version', 'latest version' ),
+		'Example Media Tools'    => array( 'ready', '4 possible false alarms' ),
+		'Example Custom Tools'   => array( 'needs_developer', "can't check this for updates" ),
+		'Example Single File'    => array( 'needs_developer', "can't check this for updates" ),
+		'Example Deprecations'   => array( 'ready', 'deprecation warnings' ),
+		'Example Big Data'       => array( 'ready', 'No problems found' ),
+		'Example Modern'         => array( 'ready', 'No problems found' ),
+		'Example Pack 13'        => array( 'ready', '' ),
+		'Example Child'          => array( 'ready', 'deprecation warning' ),
+		'Twenty Twenty-Five'     => array( 'ready', '' ),
 	);
 	foreach ( $expected as $name => list( $verdict, $text ) ) {
 		$row = $verdicts[ $name ] ?? array(
@@ -241,7 +241,7 @@ function upgrade_radar_e2e_full(): void {
 	$errors = 0;
 	for ( $row = fgetcsv( $stream, 0, ',', '"', '' ); false !== $row; $row = fgetcsv( $stream, 0, ',', '"', '' ) ) {
 		$rows[] = $row;
-		if ( 'UR E2E Legacy Forms' === ( $row[1] ?? '' ) && 'Error' === ( $row[7] ?? '' ) && '' !== $row[4] && 0 < (int) $row[5] ) {
+		if ( 'Example Legacy Forms' === ( $row[1] ?? '' ) && 'Error' === ( $row[7] ?? '' ) && '' !== $row[4] && 0 < (int) $row[5] ) {
 			++$errors;
 		}
 	}
@@ -258,7 +258,7 @@ function upgrade_radar_e2e_rival(): void {
 	$run  = upgrade_radar_e2e_run( $page, 10 );
 
 	upgrade_radar_e2e_check( 'paused' === ( $run['summary']['status'] ?? '' ), sprintf( 'The scan pauses after %d requests', $run['requests'] ) );
-	upgrade_radar_e2e_check( false !== strpos( (string) ( $run['summary']['problem'] ?? '' ), 'UR E2E Rival Scanner' ), 'The message names the plugin that loads PHP_CodeSniffer' );
+	upgrade_radar_e2e_check( false !== strpos( (string) ( $run['summary']['problem'] ?? '' ), 'Example Rival Scanner' ), 'The message names the plugin that loads PHP_CodeSniffer' );
 
 	$page = upgrade_radar_e2e_request( '/wp-admin/tools.php?page=upgrade-radar' )['body'];
 	upgrade_radar_e2e_check( false !== strpos( $page, 'deactivate that plugin while you scan' ) && false !== strpos( $page, 'upgrade_radar_resume' ), 'The paused page explains what to do and offers Resume' );

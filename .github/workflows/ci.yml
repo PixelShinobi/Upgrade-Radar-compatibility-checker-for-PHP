@@ -59,3 +59,28 @@ jobs:
       - name: WordPress logs
         if: failure()
         run: docker compose logs --tail=200 wordpress
+
+  release:
+    name: Release zip
+    # Builds the zip with PHP-Scoper, installs it on a fresh WordPress, runs
+    # a full scan with it, then Plugin Check. On pull requests and on demand only.
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - run: tests/release/run.sh
+      - run: tests/release/plugin-check.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: upgrade-radar
+          path: build/upgrade-radar.zip
+          if-no-files-found: error
+      - name: WordPress logs
+        if: failure()
+        run: docker compose -f tests/release/docker-compose.yml logs --tail=200 wordpress
