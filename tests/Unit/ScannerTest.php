@@ -96,7 +96,7 @@ final class ScannerTest extends TestCase {
 	 * Annotations naming PHPCompatibility sniffs are honored, others aren't.
 	 */
 	public function test_only_honors_annotations_that_name_phpcompatibility_sniffs(): void {
-		foreach ( array( 'generic-annotations.php', 'compatibility-annotations.php' ) as $file ) {
+		foreach ( array( 'generic-annotations.php', 'compatibility-annotations.php', 'reenabled-annotations.php' ) as $file ) {
 			$report = $this->scan( 'edge', $file, '8.5' );
 			$this->assertSame( Fixtures::expected( Fixtures::path( 'edge/' . $file ) ), Fixtures::found( $report ), $file );
 		}

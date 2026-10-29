@@ -47,6 +47,11 @@ final class CompatibilityFile extends LocalFile {
 
 		$ignored_lines = array();
 		foreach ( $this->tokenizer->ignoredLines as $line => $rules ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHP_CodeSniffer's property.
+			// A line that switches annotations back on can hold null: nothing ignored.
+			if ( ! is_array( $rules ) ) {
+				continue;
+			}
+
 			$kept = array();
 			foreach ( $rules as $code => $value ) {
 				if ( 0 === strpos( (string) $code, 'PHPCompatibility' ) ) {
