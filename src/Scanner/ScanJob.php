@@ -193,9 +193,10 @@ final class ScanJob {
 
 	/**
 	 * How far the scan has come. Files are listed one item at a time, so
-	 * "files_found" grows as the scan reaches new items.
+	 * "files_found" grows as the scan reaches new items. The "current_*" keys
+	 * describe the item being scanned (zero before its files are listed).
 	 *
-	 * @return array{items_total: int, items_done: int, files_found: int, files_done: int, current: string|null}
+	 * @return array{items_total: int, items_done: int, files_found: int, files_done: int, current: string|null, current_files_found: int, current_files_done: int}
 	 */
 	public function progress(): array {
 		$found = 0;
@@ -203,12 +204,16 @@ final class ScanJob {
 			$found += $item['found'];
 		}
 
+		$current = $this->is_done() ? null : $this->items[ $this->current ];
+
 		return array(
-			'items_total' => count( $this->items ),
-			'items_done'  => min( $this->current, count( $this->items ) ),
-			'files_found' => $found,
-			'files_done'  => $this->processed,
-			'current'     => $this->is_done() ? null : $this->items[ $this->current ]['id'],
+			'items_total'         => count( $this->items ),
+			'items_done'          => min( $this->current, count( $this->items ) ),
+			'files_found'         => $found,
+			'files_done'          => $this->processed,
+			'current'             => null === $current ? null : $current['id'],
+			'current_files_found' => null === $current ? 0 : $current['found'],
+			'current_files_done'  => null === $current ? 0 : $current['next'],
 		);
 	}
 

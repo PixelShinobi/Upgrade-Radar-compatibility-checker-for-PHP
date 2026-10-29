@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -40,3 +41,21 @@ jobs:
           coverage: none
       - run: composer install --no-interaction --no-progress
       - run: composer test
+
+  e2e:
+    name: End-to-end in WordPress
+    # About ten minutes, so on pull requests and on demand only.
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+      - run: composer install --no-dev --no-interaction --no-progress
+      - run: tests/e2e/run.sh
+      - name: WordPress logs
+        if: failure()
+        run: docker compose logs --tail=200 wordpress

@@ -137,7 +137,7 @@ final class Runtime {
 		$autoload = $this->vendor_dir . '/squizlabs/php_codesniffer/autoload.php';
 		$utils    = $this->vendor_dir . '/phpcsstandards/phpcsutils/phpcsutils-autoload.php';
 		if ( ! is_readable( $autoload ) || ! is_readable( $utils ) ) {
-			throw new ScannerUnavailable( sprintf( 'PHP_CodeSniffer is missing from %s.', $this->vendor_dir ) );
+			throw ScannerUnavailable::broken_install( sprintf( 'PHP_CodeSniffer is missing from %s.', $this->vendor_dir ) );
 		}
 
 		require_once $autoload;
@@ -184,7 +184,7 @@ final class Runtime {
 			);
 		} catch ( Throwable $e ) {
 			$this->ruleset = null;
-			throw new ScannerUnavailable( 'PHP_CodeSniffer could not load the ruleset: ' . trim( $e->getMessage() ), 0, $e );
+			throw ScannerUnavailable::broken_install( 'PHP_CodeSniffer could not load the ruleset: ' . trim( $e->getMessage() ), $e );
 		}
 	}
 
@@ -200,7 +200,7 @@ final class Runtime {
 	private function use_test_version( string $test_version ): void {
 		Config::setConfigData( 'testVersion', $test_version, true );
 		if ( Config::getConfigData( 'testVersion' ) !== $test_version ) {
-			throw new ScannerUnavailable( 'PHP_CodeSniffer did not accept the testVersion setting.' );
+			throw ScannerUnavailable::broken_install( 'PHP_CodeSniffer did not accept the testVersion setting.' );
 		}
 
 		// PHPCompatibility reads the testVersion once and keeps it for the rest of the process.
@@ -213,7 +213,7 @@ final class Runtime {
 				$cached->setValue( null, null );
 			}
 		} catch ( ReflectionException $e ) {
-			throw new ScannerUnavailable( 'This PHPCompatibility version is not supported: ' . $e->getMessage(), 0, $e );
+			throw ScannerUnavailable::broken_install( 'This PHPCompatibility version is not supported: ' . $e->getMessage(), $e );
 		}
 	}
 
@@ -297,14 +297,12 @@ final class Runtime {
 		$expected = realpath( $this->vendor_dir . '/' . $package );
 		$actual   = class_exists( $class_name ) ? ( new ReflectionClass( $class_name ) )->getFileName() : false;
 
-		if ( false === $expected || false === $actual || 0 !== strpos( (string) realpath( $actual ), $expected . DIRECTORY_SEPARATOR ) ) {
-			throw new ScannerUnavailable(
-				sprintf(
-					'Another copy of %s is already loaded (%s), probably by another plugin. Scans need their own copy to give reliable results.',
-					$package,
-					false === $actual ? 'unknown location' : $actual
-				)
-			);
+		if ( false === $expected ) {
+			throw ScannerUnavailable::broken_install( sprintf( '%s is missing from %s.', $package, $this->vendor_dir ) );
+		}
+
+		if ( false === $actual || 0 !== strpos( (string) realpath( $actual ), $expected . DIRECTORY_SEPARATOR ) ) {
+			throw ScannerUnavailable::other_copy_loaded( $package, false === $actual ? '' : $actual );
 		}
 	}
 }
