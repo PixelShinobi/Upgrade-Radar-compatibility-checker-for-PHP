@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="UpgradeRadarCodingStandards" xsi:noNamespaceSchemaLocation="vendor/squizlabs/php_codesniffer/phpcs.xsd">
+
+	<description>Our own code: WordPress Coding Standards, and PHP 7.4 or later.</description>
+
+	<file>.</file>
+
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+	<!-- Sample code for the scanner, broken on purpose. -->
+	<exclude-pattern>/tests/fixtures/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="basepath" value="."/>
+	<arg value="sp"/>
+	<arg name="colors"/>
+
+	<config name="testVersion" value="7.4-"/>
+
+	<rule ref="WordPress"/>
+	<!-- Plain PHPCompatibility: the engine runs without WordPress and its polyfills. -->
+	<rule ref="PHPCompatibility"/>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="upgrade_radar"/>
+				<element value="UpgradeRadar"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="upgrade-radar"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Classes are autoloaded with PSR-4, so file names match class names. scoper.inc.php is PHP-Scoper's default name. -->
+	<rule ref="WordPress.Files.FileName">
+		<exclude-pattern>/src/*</exclude-pattern>
+		<exclude-pattern>/tests/*</exclude-pattern>
+		<exclude-pattern>/scoper\.inc\.php$</exclude-pattern>
+	</rule>
+
+	<!--
+	The scanner engine and the standalone CLI run without WordPress, so
+	WordPress's file functions and escaping functions don't exist there.
+	Whatever shows the engine's messages in WordPress escapes them on output.
+	-->
+	<rule ref="WordPress.WP.AlternativeFunctions">
+		<exclude-pattern>/bin/*</exclude-pattern>
+		<exclude-pattern>/src/Scanner/*</exclude-pattern>
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
+		<exclude-pattern>/bin/*</exclude-pattern>
+		<exclude-pattern>/src/Scanner/*</exclude-pattern>
+	</rule>
+
+</ruleset>

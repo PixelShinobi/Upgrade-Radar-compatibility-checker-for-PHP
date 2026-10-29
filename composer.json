@@ -1,0 +1,53 @@
+{
+	"name": "pixelshinobi/upgrade-radar",
+	"description": "Upgrade Radar – compatibility checker for PHP. Tells WordPress site owners whether their plugins and theme are ready for a newer PHP version.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"require": {
+		"php": ">=7.4",
+		"ext-simplexml": "*",
+		"ext-tokenizer": "*",
+		"phpcompatibility/php-compatibility": "10.0.0-alpha2",
+		"phpcompatibility/phpcompatibility-paragonie": "2.0.0-alpha2",
+		"phpcompatibility/phpcompatibility-wp": "3.0.0-alpha2",
+		"squizlabs/php_codesniffer": "~3.13.5"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^9.6",
+		"wp-coding-standards/wpcs": "^3.4"
+	},
+	"autoload": {
+		"psr-4": {
+			"UpgradeRadar\\": "src/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"UpgradeRadar\\Tests\\Unit\\": "tests/Unit/"
+		}
+	},
+	"bin": [
+		"bin/upgrade-radar"
+	],
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"platform": {
+			"php": "7.4.33"
+		},
+		"sort-packages": true
+	},
+	"minimum-stability": "stable",
+	"prefer-stable": true,
+	"scripts": {
+		"test": "phpunit",
+		"lint": "phpcs",
+		"lint:fix": "phpcbf"
+	},
+	"scripts-descriptions": {
+		"test": "Run the PHPUnit test suite.",
+		"lint": "Check our own code with the WordPress Coding Standards and PHPCompatibilityWP.",
+		"lint:fix": "Fix what PHPCS can fix automatically."
+	}
+}
