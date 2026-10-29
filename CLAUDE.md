@@ -13,26 +13,34 @@ The plugin is **Upgrade Radar – compatibility checker for PHP**. Use `upgrade-
 - Cloud sessions have PHP 8.3 and Composer pre-installed, and packagist.org is reachable.
 - Docker is available for a throwaway WordPress (official `wordpress` and `mariadb` images) for manual and integration tests.
 - The plugin itself must run on PHP 7.4+ and current WordPress.
+- Cloud session quirks: the Docker daemon may need starting (`dockerd > /tmp/dockerd.log 2>&1 &`), and Docker Hub can rate-limit pulls (`mirror.gcr.io/library/<image>` works). Run Composer with `COMPOSER_ALLOW_SUPERUSER=1` so the PHPCS installer plugin runs. GitHub zip downloads are blocked, so a fresh `composer install` falls back to git clones and takes a few minutes. downloads.wordpress.org is blocked too: for real plugin code, use the WordPress Docker image or clone plugins from GitHub.
+- To prove PHP 7.4 support, run the tests in Docker: `docker run --rm -v "$PWD":/app -w /app php:7.4-cli vendor/bin/phpunit`.
 
-## Planned layout (create during milestones 1–2)
+## Layout (milestone 1 built the engine; milestone 2 adds the plugin)
 
 ```
-upgrade-radar.php         plugin bootstrap (plugin header, GPLv2-or-later)
+upgrade-radar.php         plugin bootstrap (plugin header, GPLv2-or-later)          milestone 2
 src/Scanner/              WordPress-free engine wrapping PHP_CodeSniffer + PHPCompatibilityWP
-src/Admin/                admin screen and results UI
-src/Jobs/                 resumable background batching
+src/Scanner/ruleset.xml   the PHPCS ruleset scans use, with the reasons for each exclusion
+src/Admin/                admin screen and results UI                                milestone 2
+src/Jobs/                 resumable background batching (WordPress side of ScanJob)  milestone 2
 src/Cli/                  WP-CLI command (optional in v1)
+bin/upgrade-radar         standalone CLI for the engine, no WordPress needed
 tests/Unit/               PHPUnit tests for the engine
-tests/fixtures/           sample code with known PHP 8.x breaks, plus clean code
-readme.txt                WordPress.org readme
-docker-compose.yml        local WordPress for manual tests
+tests/fixtures/           breaks/phpXY.php (changes from PHP X.Y), clean/ and edge/ sample code
+scoper.inc.php            PHP-Scoper config for prefixing vendor code in the release build
+readme.txt                WordPress.org readme                                        milestone 3
+docker-compose.yml        local WordPress for manual tests (docker/php/ has its php.ini)
 ```
 
-## Commands (set these up in milestone 1)
+Fixtures mark each expected finding at the end of its line with `// expect: error <sniff code>`. The tests compare those markers with what the scanner finds, for every target version. Our code follows the WordPress Coding Standards (tabs, snake_case methods, `array()`), with PSR-4 class files under `src/`.
+
+## Commands
 
 - `composer install`
 - `composer test`: PHPUnit
-- `composer lint`: PHPCS with the WordPress Coding Standards, on our own code
+- `composer lint`: PHPCS with the WordPress Coding Standards, on our own code (`composer lint:fix` fixes what it can)
+- `bin/upgrade-radar scan --php=8.3 <path>...`: scan plugin or theme code from the command line
 - `docker compose up -d`: WordPress at http://localhost:8080
 
 ## Hard rules
@@ -43,7 +51,7 @@ docker-compose.yml        local WordPress for manual tests
 - **No outside HTTP calls in the free plugin.** Anything external later must be opt-in and documented in readme.txt (Guideline 7).
 - **No locked or paid features in this plugin** (Guideline 5).
 - **Pin the rulesets exactly:** `phpcompatibility/phpcompatibility-wp` `3.0.0-alpha2` with `phpcompatibility/php-compatibility` `10.0.0-alpha2`. They require `@dev` sub-dependencies, so composer.json needs explicit stability settings. They're alpha, so the UI says results may include false alarms.
-- **Don't clash with other plugins that bundle PHP_CodeSniffer** (both rivals use it). Load it only during a scan, and evaluate prefixing vendor code (for example with Strauss or PHP-Scoper).
+- **Don't clash with other plugins that bundle PHP_CodeSniffer** (both rivals use it). Load it only during a scan, and evaluate prefixing vendor code (for example with Strauss or PHP-Scoper). Milestone 1 evaluated it: PHP-Scoper works (see PLAN.md and `scoper.inc.php`).
 - Keep `src/Scanner/` free of WordPress functions so it can be unit-tested and reused by a future cloud service.
 - On every admin action: capability check (`manage_options`), nonce, sanitized input, escaped output.
 - GPL-compatible code only, with GPLv2-or-later headers.
