@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Builds the release zip, build/upgrade-radar.zip, from the files git tracks:
+#
+#   bin/build-release
+#
+# 1. Copies the plugin's files and installs the production dependencies.
+# 2. Prefixes PHP_CodeSniffer, PHPCSUtils and PHPCompatibility with
+#    UpgradeRadarVendor\ (scoper.inc.php), so they can't clash with another
+#    plugin's copy. PHP-Scoper is installed in tools/php-scoper on first use.
+# 3. Prefixes their names in src/Scanner, which uses them, without changing
+#    anything else there (bin/prefix-scanner.php). The rest of src/ is as it
+#    is in git.
+# 4. Builds a Composer classmap autoloader for the prefixed classes, which
+#    PHP_CodeSniffer's own autoloader picks up.
+# 5. Leaves out what users don't need, such as the tests, whose fixtures are
+#    PHP that's broken on purpose, and the command-line tool, and zips the
+#    plugin. WordPress.org takes zips up to 10 MB.
+#
+# Needs PHP 8.2 or later (for PHP-Scoper), Composer, git and zip.
+
+set -euo pipefail
+cd "$(dirname "$0")/.."
+root=$PWD
+build=$root/build
+stage=$build/stage
+out=$build/upgrade-radar
+zip_file=$build/upgrade-radar.zip
+max_bytes=$((10 * 1024 * 1024))
+prefix=UpgradeRadarVendor
+
+# What the release holds, besides vendor/ and composer.json.
+plugin_files=(upgrade-radar.php uninstall.php readme.txt license.txt assets src)
+
+# Packages PHP-Scoper prefixes, which don't declare an autoloader Composer can use.
+classmap_dirs=(vendor/squizlabs/php_codesniffer/src vendor/squizlabs/php_codesniffer/autoload.php vendor/phpcsstandards vendor/phpcompatibility)
+
+export COMPOSER_ALLOW_SUPERUSER=1
+
+if [ ! -x tools/php-scoper/vendor/bin/php-scoper ]; then
+	composer install --working-dir=tools/php-scoper --no-interaction --no-progress
+fi
+
+rm -rf "$build"
+mkdir -p "$stage"
+
+echo "Copying the plugin and installing production dependencies..."
+git ls-files -z | grep -zv -E '^(tests|bin|docker|tools|\.github|\.wordpress-org)/' | xargs -0 cp --parents -t "$stage"
+composer install --working-dir="$stage" --no-dev --no-interaction --no-progress --quiet
+
+echo "Prefixing the dependencies with PHP-Scoper..."
+# It writes paths relative to vendor/, the folder its files have in common.
+tools/php-scoper/vendor/bin/php-scoper add-prefix --prefix="$prefix" --working-dir="$stage" --config="$root/scoper.inc.php" --output-dir="$out/vendor" --no-interaction --quiet
+
+for file in "${plugin_files[@]}"; do
+	cp -R "$stage/$file" "$out/"
+done
+
+# The command-line tool needs bin/, which the release leaves out.
+rm "$out/src/Scanner/Cli.php"
+php bin/prefix-scanner.php "$prefix" "$out/src/Scanner"
+
+echo "Building the autoloader..."
+cp -R "$stage/vendor/composer" "$out/vendor/"
+php -r '
+	$classmap = array_slice( $argv, 1 );
+	echo json_encode(
+		array(
+			"name"     => "upgrade-radar/release",
+			"autoload" => array( "classmap" => $classmap ),
+			"config"   => array(
+				"autoloader-suffix" => "UpgradeRadarScoped",
+				"platform-check"    => false,
+			),
+		),
+		JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+	);
+' "${classmap_dirs[@]}" > "$out/composer.json"
+composer dump-autoload --working-dir="$out" --no-dev --classmap-authoritative --no-interaction --quiet
+
+# Ours replaces the one above: it says where vendor/ comes from.
+cp "$stage/composer.json" "$out/composer.json"
+
+# Nothing a site needs: Composer's tooling, PHP-Scoper's autoloader (PHP_CodeSniffer
+# loads vendor/autoload.php itself) and files people don't read.
+rm -rf "$out/vendor/bin" "$out/vendor/composer/installers" "$out/vendor/scoper-autoload.php"
+find "$out/vendor" \( -name '.*' -o -name '*.md' -o -name '*.dist' -o -name 'composer.json' -o -name 'composer.lock' \) -not -iname 'licen*' -not -path "$out/vendor" -exec rm -rf {} +
+
+echo "Zipping..."
+(cd "$build" && zip -qr "$zip_file" upgrade-radar)
+
+bytes=$(stat -c %s "$zip_file")
+echo "Built $zip_file: $(awk "BEGIN { printf \"%.1f\", $bytes / 1048576 }") MB zipped, $(du -sh "$out" | cut -f1) unzipped, $(find "$out" -type f | wc -l) files."
+if [ "$bytes" -gt "$max_bytes" ]; then
+	echo "The zip is over WordPress.org's 10 MB limit." >&2
+	exit 1
+fi

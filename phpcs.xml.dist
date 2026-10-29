@@ -9,6 +9,9 @@
 	<exclude-pattern>/node_modules/*</exclude-pattern>
 	<!-- Sample code for the scanner, broken on purpose. -->
 	<exclude-pattern>/tests/fixtures/*</exclude-pattern>
+	<!-- The release build (bin/build-release) and Plugin Check (tests/release/plugin-check.sh). -->
+	<exclude-pattern>/build/*</exclude-pattern>
+	<exclude-pattern>/tools/plugin-check/*</exclude-pattern>
 
 	<arg name="extensions" value="php"/>
 	<arg name="basepath" value="."/>

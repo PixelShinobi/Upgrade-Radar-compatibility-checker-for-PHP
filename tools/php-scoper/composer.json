@@ -1,0 +1,11 @@
+{
+	"name": "upgrade-radar/php-scoper-tool",
+	"description": "PHP-Scoper for bin/build-release, kept apart from the plugin's dependencies because it needs PHP 8.2.",
+	"require": {
+		"php": ">=8.2",
+		"humbug/php-scoper": "0.18.20"
+	},
+	"config": {
+		"sort-packages": true
+	}
+}
