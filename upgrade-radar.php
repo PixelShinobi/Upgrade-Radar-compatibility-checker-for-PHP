@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Upgrade Radar – compatibility checker for PHP
  * Description:       Checks whether your active plugins and theme are ready for a newer PHP version, with a plain-English verdict for each.
- * Version:           0.1.0
+ * Version:           1.0.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            PixelShinobi
