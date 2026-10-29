@@ -1,4 +1,4 @@
-# PHP Upgrade Checker (working name)
+# Upgrade Radar – compatibility checker for PHP
 
 A WordPress plugin that tells site owners whether their plugins and theme are ready for a newer PHP version, with one plain-English verdict per item.
 

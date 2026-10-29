@@ -6,7 +6,7 @@ Guidance for Claude Code sessions in this repo. Read `PLAN.md` first: it covers 
 
 A WordPress plugin that scans a site's active plugins and theme and tells the owner whether they're ready for a newer PHP version (8.1–8.5), with one plain-English verdict per item (Ready / Update first / No compatible version yet / Needs a developer).
 
-The working name is "PHP Upgrade Checker". The public name and WordPress.org slug are undecided and must not start with "PHP" or "WordPress" (WordPress.org Guideline 17). Keep the name in one constant so it's easy to change.
+The plugin is **Upgrade Radar – compatibility checker for PHP**. Use `upgrade-radar` as the slug, text domain and main file name, with `UpgradeRadar` as the PHP namespace and `upgrade_radar_` as the prefix for functions, options and hooks. Names must never start with "PHP" or "WordPress" (WordPress.org Guideline 17). Keep the display name in one constant.
 
 ## Environment
 
@@ -17,7 +17,7 @@ The working name is "PHP Upgrade Checker". The public name and WordPress.org slu
 ## Planned layout (create during milestones 1–2)
 
 ```
-php-upgrade-checker.php   plugin bootstrap (plugin header, GPLv2-or-later)
+upgrade-radar.php         plugin bootstrap (plugin header, GPLv2-or-later)
 src/Scanner/              WordPress-free engine wrapping PHP_CodeSniffer + PHPCompatibilityWP
 src/Admin/                admin screen and results UI
 src/Jobs/                 resumable background batching

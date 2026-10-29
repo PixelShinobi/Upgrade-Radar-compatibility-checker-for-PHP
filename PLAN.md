@@ -1,6 +1,6 @@
-# PHP Upgrade Checker: Plan
+# Upgrade Radar: Plan
 
-_Working name. Last updated Oct 28, 2026._
+_Upgrade Radar – compatibility checker for PHP. Last updated Oct 28, 2026._
 
 ## Why this, why now
 
@@ -29,7 +29,7 @@ _Working name. Last updated Oct 28, 2026._
 - **No locked features in the free plugin** (Guideline 5). Paid features must be a separate service (allowed as "serviceware", Guideline 6) or a separate Pro plugin sold elsewhere.
 - **No calls to outside servers without explicit opt-in** (Guideline 7).
 - **All code GPL-compatible** (Guideline 1). PHP_CodeSniffer is BSD-3-Clause; PHPCompatibility is LGPL-3.0-or-later. Both are fine.
-- **The public slug can't start with another project's name** (Guideline 17), so the listed name must be original, for example "Upgrade Radar – compatibility checker for PHP". **Decision needed before submitting.**
+- **The public slug can't start with another project's name** (Guideline 17). **Decided:** the plugin is **Upgrade Radar – compatibility checker for PHP**, with `upgrade-radar` as the requested slug and text domain. WordPress.org confirms the slug during review.
 - **Upgrade prompts must be rare and dismissible** (Guideline 11).
 
 ## v1: free plugin, one weekend
@@ -38,7 +38,7 @@ _Working name. Last updated Oct 28, 2026._
 - Admin screen: choose a target PHP version (8.1–8.5) and scan the active plugins and the active theme.
 - Engine: PHP_CodeSniffer + PHPCompatibilityWP `3.0.0-alpha2` (pinned), run in-process, batched and resumable.
 - Results: a verdict per item, error/warning counts, file:line details, an "update available" hint, and CSV export.
-- If time allows: a WP-CLI command (`wp <slug> scan --php=8.3`), which agencies use.
+- If time allows: a WP-CLI command (`wp upgrade-radar scan --php=8.3`), which agencies use.
 
 **Out until there's demand:** the cloud database, AI explanations, email alerts and the multi-site dashboard.
 
