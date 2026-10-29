@@ -192,6 +192,9 @@ function upgrade_radar_e2e_verdicts( string $page ): array {
  * Full scan of the site: 30+ plugins and a child theme, for PHP 8.4.
  */
 function upgrade_radar_e2e_full(): void {
+	$limits = upgrade_radar_e2e_request( '/ur-e2e-limits.php' )['body'];
+	upgrade_radar_e2e_check( 'exec=disabled max_execution_time=30 memory_limit=128M' === $limits, "Web requests run like on a locked-down host ($limits)" );
+
 	$page = upgrade_radar_e2e_submit( upgrade_radar_e2e_login(), 'upgrade_radar_start', array( 'target' => '8.4' ) );
 	$run  = upgrade_radar_e2e_run( $page, 100 );
 

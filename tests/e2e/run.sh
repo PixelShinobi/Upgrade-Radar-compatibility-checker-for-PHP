@@ -44,8 +44,6 @@ wp eval-file wp-content/plugins/upgrade-radar/tests/e2e/setup.php
 # From here on, no wp plugin list or wp theme list: they check for updates,
 # which replaces that update data.
 
-docker compose exec -T wordpress php -r 'echo "disable_functions: ", ini_get( "disable_functions" ), "\nmax_execution_time: ", ini_get( "max_execution_time" ), "\n";'
-
 php tests/e2e/scan.php full
 wp plugin activate ur-e2e-rival-scanner
 php tests/e2e/scan.php rival

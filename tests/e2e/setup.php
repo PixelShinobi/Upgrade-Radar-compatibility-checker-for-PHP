@@ -148,4 +148,8 @@ $upgrade_radar_e2e_themes->response  = array();
 $upgrade_radar_e2e_themes->no_update = array( 'twentytwentyfive' => array( 'new_version' => $upgrade_radar_e2e_themes->checked['twentytwentyfive'] ) );
 set_site_transient( 'update_themes', $upgrade_radar_e2e_themes );
 
+// Shows the web server's PHP limits to the test. WP-CLI can't: PHP's command
+// line ignores max_execution_time.
+file_put_contents( ABSPATH . 'ur-e2e-limits.php', "<?php\nprintf( 'exec=%s max_execution_time=%s memory_limit=%s', function_exists( 'exec' ) ? 'available' : 'disabled', ini_get( 'max_execution_time' ), ini_get( 'memory_limit' ) );\n" );
+
 WP_CLI::success( sprintf( '%d plugins active, theme %s.', count( (array) get_option( 'active_plugins' ) ), get_stylesheet() ) );
