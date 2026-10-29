@@ -57,6 +57,7 @@ final class FileFinder {
 	public function find( string $path ): array {
 		$real_path = realpath( $path );
 		if ( false === $real_path || ! is_readable( $real_path ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 			throw new InvalidArgumentException( sprintf( 'Not a readable file or directory: %s', $path ) );
 		}
 

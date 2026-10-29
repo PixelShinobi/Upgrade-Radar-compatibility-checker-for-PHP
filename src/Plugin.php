@@ -28,7 +28,7 @@ final class Plugin {
 	 */
 	public const MENU_TITLE = 'Upgrade Radar';
 
-	public const VERSION = '0.1.0';
+	public const VERSION = '1.0.0';
 
 	/**
 	 * Path of the main plugin file.

@@ -140,6 +140,7 @@ final class Runtime {
 		$autoload = $this->vendor_dir . '/squizlabs/php_codesniffer/autoload.php';
 		$utils    = $this->vendor_dir . '/phpcsstandards/phpcsutils/phpcsutils-autoload.php';
 		if ( ! is_readable( $autoload ) || ! is_readable( $utils ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 			throw ScannerUnavailable::broken_install( sprintf( 'PHP_CodeSniffer is missing from %s.', $this->vendor_dir ) );
 		}
 
@@ -187,6 +188,7 @@ final class Runtime {
 			);
 		} catch ( Throwable $e ) {
 			$this->ruleset = null;
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 			throw ScannerUnavailable::broken_install( 'PHP_CodeSniffer could not load the ruleset: ' . trim( $e->getMessage() ), $e );
 		}
 	}
@@ -216,6 +218,7 @@ final class Runtime {
 				$cached->setValue( null, null );
 			}
 		} catch ( ReflectionException $e ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 			throw ScannerUnavailable::broken_install( 'This PHPCompatibility version is not supported: ' . $e->getMessage(), $e );
 		}
 	}
@@ -243,6 +246,7 @@ final class Runtime {
 							if ( in_array( $source, self::HARMLESS_INTERNAL_MESSAGES, true ) ) {
 								continue;
 							}
+							// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 							throw new RuntimeException( (string) $message['message'] );
 						}
 
@@ -274,7 +278,8 @@ final class Runtime {
 				if ( 0 === ( $reported & $severity ) || E_DEPRECATED === $severity || E_USER_DEPRECATED === $severity ) {
 					return true;
 				}
-				throw new ErrorException( $message, 0, $severity, $file, $line ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Not output.
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
+				throw new ErrorException( $message, 0, $severity, $file, $line );
 			}
 		);
 
@@ -301,10 +306,12 @@ final class Runtime {
 		$actual   = class_exists( $class_name ) ? ( new ReflectionClass( $class_name ) )->getFileName() : false;
 
 		if ( false === $expected ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 			throw ScannerUnavailable::broken_install( sprintf( '%s is missing from %s.', $package, $this->vendor_dir ) );
 		}
 
 		if ( false === $actual || 0 !== strpos( (string) realpath( $actual ), $expected . DIRECTORY_SEPARATOR ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 			throw ScannerUnavailable::other_copy_loaded( $package, false === $actual ? '' : $actual );
 		}
 	}

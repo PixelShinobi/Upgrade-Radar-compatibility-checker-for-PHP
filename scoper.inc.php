@@ -27,6 +27,18 @@ use Isolated\Symfony\Component\Finder\Finder;
 
 return array(
 	'prefix'                  => 'UpgradeRadarVendor',
+	// WordPress core classes must stay global: the WordPress-side code
+	// (src/Jobs) type-hints WP_Theme, and prefixing it makes the scoped
+	// build fatal the moment a scan starts, because no
+	// UpgradeRadarVendor\WP_Theme ever exists. Only the scanner engine's
+	// vendor stack may be prefixed. If src ever references another
+	// WordPress core class, it has to be added here.
+	'exclude-classes'         => array( 'WP_Theme' ),
+	// Same for WordPress functions named in function_exists() strings:
+	// prefixing 'get_plugins' would make those checks test a function
+	// that never exists. (The two call sites would survive it — they
+	// only guard a require_once — but the string must stay truthful.)
+	'exclude-functions'       => array( 'get_plugins' ),
 	'finders'                 => array(
 		Finder::create()->files()->in( 'src' ),
 		Finder::create()->files()->in( 'vendor' )->exclude( array( 'bin', 'composer', 'dealerdirect' ) )->notPath( '#/(Tests|tests|docs)/#' ),

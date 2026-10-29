@@ -46,7 +46,7 @@ _Upgrade Radar – compatibility checker for PHP. Last updated Oct 29, 2026._
 
 1. **Engine:** a WordPress-free scanner library plus a CLI, tested on fixture code with known PHP 8.1–8.4 breaks. **Done Oct 29**, see [Milestone 1 results](#milestone-1-results).
 2. **Plugin:** admin screen, background batching and results UI; manual test in a Docker WordPress. **Done Oct 29**, see [Milestone 2 results](#milestone-2-results).
-3. **Submit:** readme.txt and screenshots, a clean Plugin Check run, then submit to WordPress.org.
+3. **Submit:** readme.txt and screenshots, a clean Plugin Check run, then submit to WordPress.org. **Prep done Oct 29**, see [Milestone 3 results](#milestone-3-results). The upload itself is the owner's step.
 4. **Launch watch:** track installs, reviews and support threads.
 5. **Paid service:** only if the numbers below say so.
 
@@ -108,10 +108,20 @@ Verdicts are worked out when the page shows them, so they follow WordPress's upd
 `docker/apache/loopback.conf` lets the Docker WordPress reach itself at http://localhost:8080, which WP-Cron needs.
 
 **Notes for milestone 3**
-- **Plugin Check:** not run yet. downloads.wordpress.org is blocked in cloud sessions, so clone `WordPress/plugin-check` from GitHub.
-- **Release zip:** build with PHP-Scoper, and leave out `tests/`, `bin/`, `docker/` and the dev config files.
-- **Screenshots:** the end-to-end site shows every verdict.
-- **Without WP-Cron:** with `DISABLE_WP_CRON` and no real cron, scans only run while the page is open. The page says so.
+
+All addressed — see Milestone 3 results. One caveat stands: without WP-Cron (`DISABLE_WP_CRON` and no real cron), scans only run while the page is open. The page says so.
+
+## Milestone 3 results
+
+Submission prep done Oct 29, 2026: everything below is finished, committed, and the release zip is built. The only step left is the upload at WordPress.org, which is the owner's.
+
+- **Version:** the plugin header said 0.1.0 while the milestones called this release 1.0.0. Header and `Plugin::VERSION` are now 1.0.0, so the first public release matches the readme's stable tag.
+- **readme.txt:** written in WordPress.org format (Contributors: pixelshinobi; requires at least 6.0; tested up to 7.1; requires PHP 7.4; stable tag 1.0.0). Text comes from README.md and the sections above; no feature is claimed that the plugin doesn't have.
+- **Release build:** `build/upgrade-radar.zip`, 1.9 MB, top folder `upgrade-radar/`. Sources scoped with PHP-Scoper per `scoper.inc.php`; the vendor tree ships without its tests and docs; `tests/`, `bin/`, `docker/` and the dev config files stay out, as milestone 1 required. Scoping never touches the main plugin file, `uninstall.php` or the readme — those ship as written. The build's composer.json ships in the zip: Plugin Check asks for it when a vendor directory is present, and it records how the bundled autoloader was made (a classmap over the five bundled packages with the `UpgradeRadarScoped` suffix, plus the PHPCSUtils bootstrap in `autoload_files.php`). Getting that classmap wrong is silent until a scan starts, so the smoke test below matters.
+- **Two scoping bugs, found by testing the scoped build and fixed in `scoper.inc.php`:** the prefixer rewrote the `WP_Theme` type hint in `Jobs\Inventory` into a vendor class that doesn't exist — a fatal the moment a scan started — and the string `'get_plugins'` inside two `function_exists()` checks, which would have made the plugin think the function was missing. WordPress's own classes and functions now sit in `exclude-classes` / `exclude-functions`, with comments warning against removing them. After the fix, scoped and unscoped engines agree exactly: the milestone 1 fixtures give 33 errors, 23 warnings and 33 false alarms either way, and the SQLite plugin gives 17 errors either way.
+- **Plugin Check 2.1.0: no errors, 13 warnings**, run in a local WordPress 7.1.4 (SQLite) against the release zip itself. The first run reported 40 errors; none was a behaviour bug. The translators comments existed but sat inside ternary branches, which the scoper's printer drops, so they now sit above their statements. Exception messages in the WordPress-free engine are data, not output — wp-admin escapes them when displaying — and the command-line runner writes to its own stdout/stderr; those sites, and the CSV download's `php://output` stream, carry targeted `phpcs:ignore` comments saying so. The 13 warnings are deliberate and stay: direct database queries for the scan-state rows and the option-row lock in `Jobs\Store` (five pairs), and `set_error_handler` / `error_reporting` around the in-process PHP_CodeSniffer runs (three).
+- **Smoke test:** the release zip was installed into the same local WordPress, activated, and a scan for PHP 8.4 run to completion. Akismet, Hello Dolly and Twenty Twenty-Five: Ready. SQLite Database Integration: No compatible version yet, 17 errors — the same findings as the unscoped engine. A rig-only plugin with removed functions planted in it: Needs a developer, 2 errors, 1 warning and 1 possible false alarm (the guarded call excused, as designed).
+- **Screenshots:** `screenshots/screenshot-1.png` shows the results page with all three verdict kinds; `screenshot-2.png` shows one item's details expanded — file and line for each finding, the possible false alarm marked as one. They go up as listing assets at submission time.
 
 ## Possible false alarms
 

@@ -55,6 +55,7 @@ final class TargetVersion {
 	public static function from_string( string $version ): self {
 		$version = trim( $version );
 		if ( ! in_array( $version, self::SUPPORTED, true ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 			throw new InvalidArgumentException(
 				sprintf(
 					'Unsupported target PHP version "%s". Choose one of: %s.',

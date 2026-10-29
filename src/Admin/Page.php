@@ -149,9 +149,9 @@ final class Page {
 				<?php foreach ( TargetVersion::SUPPORTED as $version ) : ?>
 					<option value="<?php echo esc_attr( $version ); ?>" <?php selected( $version, $selected ); ?>>
 						<?php
+						/* translators: %s: PHP version, such as 8.3. */
 						echo esc_html(
 							$version === $current
-								/* translators: %s: PHP version, such as 8.3. */
 								? sprintf( __( '%s (this site now)', 'upgrade-radar' ), $version )
 								: $version
 						);
@@ -337,10 +337,9 @@ final class Page {
 			$summary[] = sprintf( _n( 'Show %s problem', 'Show %s problems', $problems, 'upgrade-radar' ), number_format_i18n( $problems ) );
 		}
 		if ( 0 < $false_alarms ) {
+			/* translators: %s: number of possible false alarms. */
 			$summary[] = 0 < $problems
-				/* translators: %s: number of findings. */
 				? sprintf( _n( '%s possible false alarm', '%s possible false alarms', $false_alarms, 'upgrade-radar' ), number_format_i18n( $false_alarms ) )
-				/* translators: %s: number of findings. */
 				: sprintf( _n( 'Show %s possible false alarm', 'Show %s possible false alarms', $false_alarms, 'upgrade-radar' ), number_format_i18n( $false_alarms ) );
 		}
 		if ( 0 < $unchecked ) {
