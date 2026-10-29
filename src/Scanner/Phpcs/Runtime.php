@@ -20,8 +20,10 @@ use ReflectionException;
 use ReflectionProperty;
 use RuntimeException;
 use Throwable;
+use UpgradeRadar\Scanner\Guards\FalseAlarms;
 use UpgradeRadar\Scanner\Issue;
 use UpgradeRadar\Scanner\ScannerUnavailable;
+use UpgradeRadar\Scanner\TargetVersion;
 
 /**
  * Loads PHP_CodeSniffer the first time a file is scanned, never before, and
@@ -94,15 +96,15 @@ final class Runtime {
 	/**
 	 * Scans one file.
 	 *
-	 * @param string $path         Absolute path of the file. The caller checks it's allowed.
-	 * @param string $test_version PHPCompatibility testVersion, such as "7.4-8.3".
-	 * @return Issue[]
+	 * @param string        $path   Absolute path of the file. The caller checks it's allowed.
+	 * @param TargetVersion $target The PHP version to check against.
+	 * @return Issue[] With possible false alarms marked.
 	 * @throws ScannerUnavailable If PHP_CodeSniffer can't be loaded.
 	 * @throws RuntimeException If this file can't be scanned.
 	 */
-	public function scan( string $path, string $test_version ): array {
+	public function scan( string $path, TargetVersion $target ): array {
 		$this->load();
-		$this->use_test_version( $test_version );
+		$this->use_test_version( $target->test_version() );
 
 		$file = new CompatibilityFile( $path, $this->ruleset, $this->config );
 		try {
@@ -112,7 +114,8 @@ final class Runtime {
 				}
 			);
 
-			return $this->issues( $file );
+			// The tokens are only around until cleanUp().
+			return FalseAlarms::mark( $file->getTokens(), $this->issues( $file ), $target );
 		} finally {
 			$file->cleanUp();
 

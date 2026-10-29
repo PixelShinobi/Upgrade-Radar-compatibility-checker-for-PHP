@@ -146,7 +146,8 @@ final class ItemResult {
 	}
 
 	/**
-	 * Number of errors: code that breaks on the target version.
+	 * Number of errors: code that breaks on the target version. Possible
+	 * false alarms don't count.
 	 *
 	 * @return int
 	 */
@@ -163,6 +164,7 @@ final class ItemResult {
 
 	/**
 	 * Number of warnings: code that is deprecated on the target version.
+	 * Possible false alarms don't count.
 	 *
 	 * @return int
 	 */
@@ -171,6 +173,23 @@ final class ItemResult {
 			array_map(
 				static function ( FileReport $report ): int {
 					return $report->warning_count();
+				},
+				$this->reports
+			)
+		);
+	}
+
+	/**
+	 * Number of possible false alarms: findings in code that only runs when
+	 * a guard has a value it never has on the target version.
+	 *
+	 * @return int
+	 */
+	public function false_alarm_count(): int {
+		return array_sum(
+			array_map(
+				static function ( FileReport $report ): int {
+					return $report->false_alarm_count();
 				},
 				$this->reports
 			)

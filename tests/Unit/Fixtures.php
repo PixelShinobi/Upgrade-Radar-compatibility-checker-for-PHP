@@ -11,7 +11,8 @@ use UpgradeRadar\Scanner\FileReport;
 
 /**
  * Fixtures mark each expected finding at the end of its line:
- * "// expect: error <sniff code>", several separated by ";".
+ * "// expect: error <sniff code>", several separated by ";". A possible false
+ * alarm ends in " (false alarm)".
  */
 final class Fixtures {
 
@@ -56,7 +57,7 @@ final class Fixtures {
 	public static function found( FileReport $report ): array {
 		$found = array();
 		foreach ( $report->issues() as $issue ) {
-			$found[] = $issue->line() . ' ' . $issue->type() . ' ' . $issue->source();
+			$found[] = $issue->line() . ' ' . $issue->type() . ' ' . $issue->source() . ( $issue->is_possible_false_alarm() ? ' (false alarm)' : '' );
 		}
 
 		sort( $found );

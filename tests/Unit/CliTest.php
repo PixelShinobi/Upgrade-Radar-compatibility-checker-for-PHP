@@ -64,6 +64,7 @@ final class CliTest extends TestCase {
 			array(
 				'errors'          => 1,
 				'warnings'        => 6,
+				'false_alarms'    => 0,
 				'unchecked_files' => 0,
 			),
 			$json['totals']

@@ -11,6 +11,8 @@ use InvalidArgumentException;
 
 /**
  * An error (breaks on the target version) or a warning (deprecated there).
+ * Either can be a possible false alarm: in code that only runs when a guard
+ * has a value it never has on the target version.
  */
 final class Issue {
 
@@ -51,6 +53,22 @@ final class Issue {
 	 * @var string
 	 */
 	private $source;
+
+	/**
+	 * For a possible false alarm, the condition the code depends on, such as
+	 * "PHP_VERSION_ID < 80000". Otherwise "".
+	 *
+	 * @var string
+	 */
+	private $guard = '';
+
+	/**
+	 * The value the code needs the guard to have: true inside "if ( guard )",
+	 * false in its else branch.
+	 *
+	 * @var bool
+	 */
+	private $guard_runs_if = true;
 
 	/**
 	 * Creates an issue.
@@ -129,17 +147,62 @@ final class Issue {
 	}
 
 	/**
+	 * Whether the code only runs when a guard has a value it never has on
+	 * the target version. Such findings don't decide the verdict.
+	 *
+	 * @return bool
+	 */
+	public function is_possible_false_alarm(): bool {
+		return '' !== $this->guard;
+	}
+
+	/**
+	 * For a possible false alarm, the condition the code depends on, as
+	 * written. Otherwise "".
+	 *
+	 * @return string
+	 */
+	public function guard(): string {
+		return $this->guard;
+	}
+
+	/**
+	 * The value the code needs the guard to have.
+	 *
+	 * @return bool
+	 */
+	public function guard_runs_if(): bool {
+		return $this->guard_runs_if;
+	}
+
+	/**
+	 * A copy marked as a possible false alarm.
+	 *
+	 * @param string $guard   The condition the code depends on, as written.
+	 * @param bool   $runs_if The value the code needs it to have.
+	 * @return self
+	 */
+	public function with_guard( string $guard, bool $runs_if ): self {
+		$issue                = clone $this;
+		$issue->guard         = $guard;
+		$issue->guard_runs_if = $runs_if;
+		return $issue;
+	}
+
+	/**
 	 * Converts the issue to an array of scalars, for storage or JSON.
 	 *
-	 * @return array{line: int, column: int, type: string, message: string, source: string}
+	 * @return array{line: int, column: int, type: string, message: string, source: string, guard: string, guard_runs_if: bool}
 	 */
 	public function to_array(): array {
 		return array(
-			'line'    => $this->line,
-			'column'  => $this->column,
-			'type'    => $this->type,
-			'message' => $this->message,
-			'source'  => $this->source,
+			'line'          => $this->line,
+			'column'        => $this->column,
+			'type'          => $this->type,
+			'message'       => $this->message,
+			'source'        => $this->source,
+			'guard'         => $this->guard,
+			'guard_runs_if' => $this->guard_runs_if,
 		);
 	}
 
@@ -161,6 +224,13 @@ final class Issue {
 			throw new InvalidArgumentException( 'Malformed issue data.' );
 		}
 
-		return new self( $data['line'], $data['column'], $data['type'], $data['message'], $data['source'] );
+		$issue = new self( $data['line'], $data['column'], $data['type'], $data['message'], $data['source'] );
+
+		// Issues saved before possible false alarms existed have no guard.
+		if ( isset( $data['guard'] ) && is_string( $data['guard'] ) && '' !== $data['guard'] ) {
+			$issue = $issue->with_guard( $data['guard'], ! isset( $data['guard_runs_if'] ) || (bool) $data['guard_runs_if'] );
+		}
+
+		return $issue;
 	}
 }

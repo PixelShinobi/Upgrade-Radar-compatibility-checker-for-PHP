@@ -209,7 +209,7 @@ function upgrade_radar_e2e_full(): void {
 		'UR E2E Legacy Forms'   => array( 'update_first', 'Version 2.0 is available' ),
 		'UR E2E New Sliders'    => array( 'update_first', "hasn't checked this version" ),
 		'UR E2E Legacy Gallery' => array( 'no_compatible_version', 'latest version' ),
-		'UR E2E Media Tools'    => array( 'no_compatible_version', 'latest version' ),
+		'UR E2E Media Tools'    => array( 'ready', '4 possible false alarms' ),
 		'UR E2E Custom Tools'   => array( 'needs_developer', "can't check this for updates" ),
 		'UR E2E Single File'    => array( 'needs_developer', "can't check this for updates" ),
 		'UR E2E Deprecations'   => array( 'ready', 'deprecation warnings' ),
@@ -228,7 +228,7 @@ function upgrade_radar_e2e_full(): void {
 	}
 
 	$ready = count( array_keys( array_column( $verdicts, 'verdict' ), 'ready', true ) );
-	upgrade_radar_e2e_check( 31 === $ready, "31 items are ready (got $ready)" );
+	upgrade_radar_e2e_check( 32 === $ready, "32 items are ready (got $ready)" );
 	upgrade_radar_e2e_check( false !== strpos( $page, '1 file not checked' ), 'The 2.9 MB data file is reported as not checked' );
 	upgrade_radar_e2e_check( false !== strpos( $page, 'may include false alarms' ), 'The page says results may include false alarms' );
 

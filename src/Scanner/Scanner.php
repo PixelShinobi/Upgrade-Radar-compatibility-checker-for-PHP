@@ -175,7 +175,7 @@ final class Scanner implements FileScanner {
 		}
 
 		try {
-			return FileReport::scanned( $relative_path, $this->runtime->scan( $real_path, $target->test_version() ) );
+			return FileReport::scanned( $relative_path, $this->runtime->scan( $real_path, $target ) );
 		} catch ( ScannerUnavailable $e ) {
 			throw $e;
 		} catch ( Throwable $e ) {

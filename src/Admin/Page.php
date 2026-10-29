@@ -108,7 +108,7 @@ final class Page {
 					<?php
 					printf(
 						/* translators: %s: PHPCompatibility version, such as 10.0.0-alpha2. */
-						esc_html__( "Results may include false alarms: the checks come from PHPCompatibility %s, an early release. Errors are code that breaks on the chosen PHP version. Warnings are deprecated code that still works, so they don't affect the verdict.", 'upgrade-radar' ),
+						esc_html__( 'Results may include false alarms: the checks come from PHPCompatibility %s, an early release. Errors are code that breaks on the chosen PHP version. Warnings are deprecated code that still works. Possible false alarms are in code that only runs on older PHP versions, or only if something PHP removed still exists. Only errors affect the verdict.', 'upgrade-radar' ),
 						esc_html( Scanner::RULES['phpcompatibility/php-compatibility'] )
 					);
 					?>
@@ -302,7 +302,7 @@ final class Page {
 					</tr>
 					<?php if ( array() !== $result->reports() ) : ?>
 						<tr class="upgrade-radar-details-row">
-							<td colspan="4"><?php self::render_details( $result->reports() ); ?></td>
+							<td colspan="4"><?php self::render_details( $result->reports(), $target ); ?></td>
 						</tr>
 					<?php endif; ?>
 				<?php endforeach; ?>
@@ -316,21 +316,32 @@ final class Page {
 	 * Renders the problems found in an item, file by file.
 	 *
 	 * @param FileReport[] $reports Reports for files that weren't clean.
+	 * @param string       $target  The target PHP version.
 	 */
-	private static function render_details( array $reports ): void {
-		$issues    = 0;
-		$unchecked = 0;
+	private static function render_details( array $reports, string $target ): void {
+		$issues       = 0;
+		$false_alarms = 0;
+		$unchecked    = 0;
 		foreach ( $reports as $report ) {
-			$issues += count( $report->issues() );
+			$issues       += count( $report->issues() );
+			$false_alarms += $report->false_alarm_count();
 			if ( FileReport::SCANNED !== $report->status() ) {
 				++$unchecked;
 			}
 		}
 
-		$summary = array();
-		if ( 0 < $issues ) {
+		$summary  = array();
+		$problems = $issues - $false_alarms;
+		if ( 0 < $problems ) {
 			/* translators: %s: number of problems. */
-			$summary[] = sprintf( _n( 'Show %s problem', 'Show %s problems', $issues, 'upgrade-radar' ), number_format_i18n( $issues ) );
+			$summary[] = sprintf( _n( 'Show %s problem', 'Show %s problems', $problems, 'upgrade-radar' ), number_format_i18n( $problems ) );
+		}
+		if ( 0 < $false_alarms ) {
+			$summary[] = 0 < $problems
+				/* translators: %s: number of findings. */
+				? sprintf( _n( '%s possible false alarm', '%s possible false alarms', $false_alarms, 'upgrade-radar' ), number_format_i18n( $false_alarms ) )
+				/* translators: %s: number of findings. */
+				: sprintf( _n( 'Show %s possible false alarm', 'Show %s possible false alarms', $false_alarms, 'upgrade-radar' ), number_format_i18n( $false_alarms ) );
 		}
 		if ( 0 < $unchecked ) {
 			/* translators: %s: number of files. */
@@ -362,8 +373,15 @@ final class Page {
 							?>
 							<li>
 								<code><?php echo esc_html( $issue->line() . ':' . $issue->column() ); ?></code>
-								<span class="upgrade-radar-type upgrade-radar-type--<?php echo esc_attr( $issue->type() ); ?>"><?php echo esc_html( $issue->is_error() ? __( 'Error', 'upgrade-radar' ) : __( 'Warning', 'upgrade-radar' ) ); ?></span>
+								<?php if ( $issue->is_possible_false_alarm() ) : ?>
+									<span class="upgrade-radar-type upgrade-radar-type--false-alarm"><?php esc_html_e( 'Possible false alarm', 'upgrade-radar' ); ?></span>
+								<?php else : ?>
+									<span class="upgrade-radar-type upgrade-radar-type--<?php echo esc_attr( $issue->type() ); ?>"><?php echo esc_html( $issue->is_error() ? __( 'Error', 'upgrade-radar' ) : __( 'Warning', 'upgrade-radar' ) ); ?></span>
+								<?php endif; ?>
 								<?php echo esc_html( $issue->message() ); ?>
+								<?php if ( $issue->is_possible_false_alarm() ) : ?>
+									<br><span class="upgrade-radar-guard"><?php printf( esc_html( Results::false_alarm_format( $issue ) ), '<code>' . esc_html( $issue->guard() ) . '</code>', esc_html( $target ) ); ?></span>
+								<?php endif; ?>
 								<br><small><?php echo esc_html( $issue->source() ); ?></small>
 							</li>
 						<?php endforeach; ?>

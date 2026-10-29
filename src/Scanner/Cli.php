@@ -41,8 +41,13 @@ Options:
   --summary          Print totals per path, without details.
   -h, --help         Show this help.
 
+A finding in code that only runs when a version or existence check is false
+on the target, such as "if ( PHP_VERSION_ID < 80000 )", is a possible false
+alarm: it's listed, but not counted as an error or a warning.
+
 Exit status: 0 when no errors are found, 1 when errors are found (warnings
-alone don't count), 2 for usage errors, 3 when the scanner can't run here.
+and possible false alarms don't count), 2 for usage errors, 3 when the
+scanner can't run here.
 
 USAGE;
 
@@ -233,12 +238,13 @@ USAGE;
 			Scanner::RULES['phpcompatibility/php-compatibility']
 		) . PHP_EOL;
 
-		$totals = array( 0, 0, 0 );
+		$totals = array( 0, 0, 0, 0 );
 		foreach ( $results as $result ) {
 			$unchecked  = count( $result->unchecked_files() );
 			$totals[0] += $result->error_count();
 			$totals[1] += $result->warning_count();
 			$totals[2] += $unchecked;
+			$totals[3] += $result->false_alarm_count();
 
 			$out .= PHP_EOL . $result->id() . ': ';
 			if ( ScanJob::ITEM_MISSING === $result->status() ) {
@@ -247,9 +253,10 @@ USAGE;
 			}
 
 			$out .= sprintf(
-				'%s, %s in %s',
+				'%s, %s%s in %s',
 				self::count( $result->error_count(), 'error' ),
 				self::count( $result->warning_count(), 'warning' ),
+				$result->false_alarm_count() > 0 ? ', ' . self::count( $result->false_alarm_count(), 'possible false alarm' ) : '',
 				self::count( $result->files_found(), 'file' )
 			);
 			$out .= ( $unchecked > 0 ? sprintf( ' (%s not checked)', self::count( $unchecked, 'file' ) ) : '' ) . PHP_EOL;
@@ -267,11 +274,20 @@ USAGE;
 				foreach ( $report->issues() as $issue ) {
 					$out .= sprintf( '  %6s  %-7s  %s', $issue->line() . ':' . $issue->column(), $issue->type(), $issue->message() ) . PHP_EOL;
 					$out .= str_repeat( ' ', 19 ) . $issue->source() . PHP_EOL;
+					if ( $issue->is_possible_false_alarm() ) {
+						$out .= str_repeat( ' ', 19 ) . sprintf(
+							'Possible false alarm: only runs if %s%s, which never happens on PHP %s.',
+							$issue->guard(),
+							$issue->guard_runs_if() ? '' : ' is false',
+							$target->to_string()
+						) . PHP_EOL;
+					}
 				}
 			}
 		}
 
 		$out .= PHP_EOL . sprintf( 'Total: %s, %s', self::count( $totals[0], 'error' ), self::count( $totals[1], 'warning' ) );
+		$out .= $totals[3] > 0 ? ', ' . self::count( $totals[3], 'possible false alarm' ) : '';
 		$out .= ( $totals[2] > 0 ? sprintf( ', %s not checked', self::count( $totals[2], 'file' ) ) : '' ) . '.' . PHP_EOL;
 
 		return $out;
@@ -289,23 +305,26 @@ USAGE;
 		$totals = array(
 			'errors'          => 0,
 			'warnings'        => 0,
+			'false_alarms'    => 0,
 			'unchecked_files' => 0,
 		);
 
 		foreach ( $results as $result ) {
 			$totals['errors']          += $result->error_count();
 			$totals['warnings']        += $result->warning_count();
+			$totals['false_alarms']    += $result->false_alarm_count();
 			$totals['unchecked_files'] += count( $result->unchecked_files() );
 
 			$items[] = array(
-				'id'          => $result->id(),
-				'path'        => $result->path(),
-				'status'      => $result->status(),
-				'detail'      => $result->detail(),
-				'errors'      => $result->error_count(),
-				'warnings'    => $result->warning_count(),
-				'files_found' => $result->files_found(),
-				'files'       => array_map(
+				'id'           => $result->id(),
+				'path'         => $result->path(),
+				'status'       => $result->status(),
+				'detail'       => $result->detail(),
+				'errors'       => $result->error_count(),
+				'warnings'     => $result->warning_count(),
+				'false_alarms' => $result->false_alarm_count(),
+				'files_found'  => $result->files_found(),
+				'files'        => array_map(
 					static function ( FileReport $report ): array {
 						return $report->to_array();
 					},

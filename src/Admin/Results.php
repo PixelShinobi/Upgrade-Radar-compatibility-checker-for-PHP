@@ -9,6 +9,7 @@ namespace UpgradeRadar\Admin;
 
 use InvalidArgumentException;
 use UpgradeRadar\Jobs\Inventory;
+use UpgradeRadar\Scanner\Issue;
 use UpgradeRadar\Scanner\ItemResult;
 use UpgradeRadar\Scanner\ScanJob;
 use UpgradeRadar\Scanner\UpdateStatus;
@@ -150,18 +151,34 @@ final class Results {
 			case Verdict::READY:
 				if ( 0 === $result->warning_count() ) {
 					/* translators: %s: PHP version, such as 8.3. */
-					return sprintf( __( 'No problems found for PHP %s.', 'upgrade-radar' ), $target );
+					$text = sprintf( __( 'No problems found for PHP %s.', 'upgrade-radar' ), $target );
+				} else {
+					$text = sprintf(
+						/* translators: 1: number of warnings, 2: PHP version, such as 8.3. */
+						_n(
+							'Nothing breaks. %1$d deprecation warning: deprecated code still works on PHP %2$s, but should be updated eventually.',
+							'Nothing breaks. %1$d deprecation warnings: deprecated code still works on PHP %2$s, but should be updated eventually.',
+							$result->warning_count(),
+							'upgrade-radar'
+						),
+						$result->warning_count(),
+						$target
+					);
 				}
 
-				return sprintf(
-					/* translators: 1: number of warnings, 2: PHP version, such as 8.3. */
+				if ( 0 === $result->false_alarm_count() ) {
+					return $text;
+				}
+
+				return $text . ' ' . sprintf(
+					/* translators: 1: number of findings, 2: PHP version, such as 8.3. */
 					_n(
-						'Nothing breaks. %1$d deprecation warning: deprecated code still works on PHP %2$s, but should be updated eventually.',
-						'Nothing breaks. %1$d deprecation warnings: deprecated code still works on PHP %2$s, but should be updated eventually.',
-						$result->warning_count(),
+						'%1$d possible false alarm, in code that never runs on PHP %2$s.',
+						'%1$d possible false alarms, in code that never runs on PHP %2$s.',
+						$result->false_alarm_count(),
 						'upgrade-radar'
 					),
-					$result->warning_count(),
+					$result->false_alarm_count(),
 					$target
 				);
 
@@ -193,6 +210,21 @@ final class Results {
 			default:
 				return $result->detail();
 		}
+	}
+
+	/**
+	 * Why a finding is a possible false alarm, as a format: %1$s is the
+	 * guard's code and %2$s the target PHP version.
+	 *
+	 * @param Issue $issue A possible false alarm.
+	 * @return string
+	 */
+	public static function false_alarm_format( Issue $issue ): string {
+		return $issue->guard_runs_if()
+			/* translators: 1: code of a condition, such as "PHP_VERSION_ID < 80000", 2: PHP version, such as 8.3. */
+			? __( 'Only runs if %1$s, which never happens on PHP %2$s.', 'upgrade-radar' )
+			/* translators: 1: code of a condition, such as "PHP_VERSION_ID >= 80000", 2: PHP version, such as 8.3. */
+			: __( 'Only runs if %1$s is false, which never happens on PHP %2$s.', 'upgrade-radar' );
 	}
 
 	/**

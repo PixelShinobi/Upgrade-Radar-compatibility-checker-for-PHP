@@ -64,6 +64,7 @@ final class Csv {
 				__( 'Severity', 'upgrade-radar' ),
 				__( 'Message', 'upgrade-radar' ),
 				__( 'Rule', 'upgrade-radar' ),
+				__( 'Possible false alarm', 'upgrade-radar' ),
 			),
 		);
 
@@ -78,7 +79,7 @@ final class Csv {
 
 			foreach ( $result['result']->reports() as $report ) {
 				if ( FileReport::SCANNED !== $report->status() ) {
-					$rows[] = array_merge( $item, array( $report->path(), '', '', __( 'Not checked', 'upgrade-radar' ), $report->detail(), '' ) );
+					$rows[] = array_merge( $item, array( $report->path(), '', '', __( 'Not checked', 'upgrade-radar' ), $report->detail(), '', '' ) );
 					$found  = true;
 				}
 
@@ -92,6 +93,7 @@ final class Csv {
 							$issue->is_error() ? __( 'Error', 'upgrade-radar' ) : __( 'Warning', 'upgrade-radar' ),
 							$issue->message(),
 							$issue->source(),
+							$issue->is_possible_false_alarm() ? sprintf( Results::false_alarm_format( $issue ), $issue->guard(), $target ) : '',
 						)
 					);
 					$found  = true;
@@ -99,7 +101,7 @@ final class Csv {
 			}
 
 			if ( ! $found ) {
-				$rows[] = array_merge( $item, array_fill( 0, 6, '' ) );
+				$rows[] = array_merge( $item, array_fill( 0, 7, '' ) );
 			}
 		}
 

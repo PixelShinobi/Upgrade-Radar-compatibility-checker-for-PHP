@@ -78,7 +78,8 @@ file_put_contents( WP_PLUGIN_DIR . '/ur-e2e-single.php', "<?php\n/**\n * Plugin 
 $upgrade_radar_e2e_plugins['single'] = 'ur-e2e-single.php';
 
 // 26 plugins of real WordPress code, overlapping slices of wp-includes and
-// wp-admin, for volume. Bundled libraries with guarded legacy calls are left out.
+// wp-admin, for volume. Bundled libraries with guarded legacy calls are left
+// out: UR E2E Media Tools has getID3, whose findings are possible false alarms.
 $upgrade_radar_e2e_core = array();
 foreach ( array( 'wp-includes', 'wp-admin' ) as $upgrade_radar_e2e_dir ) {
 	$upgrade_radar_e2e_files = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( ABSPATH . $upgrade_radar_e2e_dir, FilesystemIterator::SKIP_DOTS ) );

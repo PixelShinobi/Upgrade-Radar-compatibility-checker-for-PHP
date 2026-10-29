@@ -22,6 +22,7 @@ The plugin is **Upgrade Radar – compatibility checker for PHP**. Use `upgrade-
 upgrade-radar.php         plugin bootstrap (plugin header, GPLv2-or-later); src/Plugin.php wires the hooks
 src/Scanner/              WordPress-free engine wrapping PHP_CodeSniffer + PHPCompatibilityWP, and the verdict logic
 src/Scanner/ruleset.xml   the PHPCS ruleset scans use, with the reasons for each exclusion
+src/Scanner/Guards/       possible false alarms: guards around findings, evaluated for the target version
 src/Admin/                Tools → Upgrade Radar: page, AJAX step, form actions, results, CSV export
 src/Jobs/                 resumable background batching (WordPress side of ScanJob): store, lock, inventory
 assets/                   the admin page's script and styles
@@ -29,14 +30,14 @@ uninstall.php             removes the plugin's options and scheduled event
 src/Cli/                  WP-CLI command (optional in v1)
 bin/upgrade-radar         standalone CLI for the engine, no WordPress needed
 tests/Unit/               PHPUnit tests for the engine and the verdicts
-tests/fixtures/           breaks/phpXY.php (changes from PHP X.Y), clean/ and edge/ sample code
+tests/fixtures/           breaks/phpXY.php (changes from PHP X.Y), clean/, edge/ and guards/ sample code
 tests/e2e/                end-to-end test in the Docker WordPress (run.sh, setup.php, scan.php)
 scoper.inc.php            PHP-Scoper config for prefixing vendor code in the release build
 readme.txt                WordPress.org readme                                        milestone 3
 docker-compose.yml        local WordPress for manual tests (docker/php/ has its php.ini, docker/apache/ makes WP-Cron work)
 ```
 
-Fixtures mark each expected finding at the end of its line with `// expect: error <sniff code>`. The tests compare those markers with what the scanner finds, for every target version. Our code follows the WordPress Coding Standards (tabs, snake_case methods, `array()`), with PSR-4 class files under `src/`.
+Fixtures mark each expected finding at the end of its line with `// expect: error <sniff code>`, adding ` (false alarm)` for a possible false alarm. The tests compare those markers with what the scanner finds, for every target version. Our code follows the WordPress Coding Standards (tabs, snake_case methods, `array()`), with PSR-4 class files under `src/`.
 
 ## Commands
 
