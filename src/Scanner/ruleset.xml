@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="UpgradeRadar" xsi:noNamespaceSchemaLocation="https://schema.phpcodesniffer.com/phpcs.xsd">
+
+	<description>Upgrade Radar: will code that runs on PHP 7.4 or later keep working after an upgrade to the target PHP version?</description>
+
+	<!--
+	The scanner runs this ruleset with testVersion "7.4-<target>" (see TargetVersion).
+	The 7.4 lower bound is WordPress's minimum PHP version, and it makes
+	PHPCompatibility report changes that only show up when moving from old
+	code to a newer PHP, such as PHP 4 style constructors.
+
+	The exclusions below drop findings that are noise for an upgrade check.
+	README.md shows how to run this ruleset with plain phpcs.
+	-->
+	<rule ref="PHPCompatibilityWP">
+
+		<!--
+		The New* sniffs flag language features that a lower PHP version doesn't
+		have yet. Code that runs on the site today already works with those, so
+		for an upgrade they are false alarms: a modern plugin would get dozens.
+		One of them, NewHTMLEntitiesFlagsDefault, reports a real but harmless
+		PHP 8.1 change: htmlspecialchars() and friends also encode single quotes.
+		tests/Unit/RulesetTest.php fails if a new New* sniff appears and isn't listed here.
+		-->
+		<exclude name="PHPCompatibility.Attributes.NewAttributes"/>
+		<exclude name="PHPCompatibility.Classes.NewAbstractProperties"/>
+		<exclude name="PHPCompatibility.Classes.NewAnonymousClasses"/>
+		<exclude name="PHPCompatibility.Classes.NewClasses"/>
+		<exclude name="PHPCompatibility.Classes.NewConstVisibility"/>
+		<exclude name="PHPCompatibility.Classes.NewConstructorPropertyPromotion"/>
+		<exclude name="PHPCompatibility.Classes.NewFinalConstants"/>
+		<exclude name="PHPCompatibility.Classes.NewFinalProperties"/>
+		<exclude name="PHPCompatibility.Classes.NewLateStaticBinding"/>
+		<exclude name="PHPCompatibility.Classes.NewReadonlyClasses"/>
+		<exclude name="PHPCompatibility.Classes.NewReadonlyProperties"/>
+		<exclude name="PHPCompatibility.Classes.NewStaticAvizProperties"/>
+		<exclude name="PHPCompatibility.Classes.NewTypedConstants"/>
+		<exclude name="PHPCompatibility.Classes.NewTypedProperties"/>
+		<exclude name="PHPCompatibility.Constants.NewConstants"/>
+		<exclude name="PHPCompatibility.Constants.NewConstantsInTraits"/>
+		<exclude name="PHPCompatibility.Constants.NewMagicClassConstant"/>
+		<exclude name="PHPCompatibility.ControlStructures.NewExecutionDirectives"/>
+		<exclude name="PHPCompatibility.ControlStructures.NewForeachExpressionReferencing"/>
+		<exclude name="PHPCompatibility.ControlStructures.NewListInForeach"/>
+		<exclude name="PHPCompatibility.ControlStructures.NewMultiCatch"/>
+		<exclude name="PHPCompatibility.ControlStructures.NewNonCapturingCatch"/>
+		<exclude name="PHPCompatibility.FunctionDeclarations.NewClosure"/>
+		<exclude name="PHPCompatibility.FunctionDeclarations.NewExceptionsFromToString"/>
+		<exclude name="PHPCompatibility.FunctionDeclarations.NewNullableTypes"/>
+		<exclude name="PHPCompatibility.FunctionDeclarations.NewParamTypeDeclarations"/>
+		<exclude name="PHPCompatibility.FunctionDeclarations.NewReturnTypeDeclarations"/>
+		<exclude name="PHPCompatibility.FunctionDeclarations.NewTrailingComma"/>
+		<exclude name="PHPCompatibility.FunctionNameRestrictions.NewMagicMethods"/>
+		<exclude name="PHPCompatibility.FunctionUse.NewFunctionParameters"/>
+		<exclude name="PHPCompatibility.FunctionUse.NewFunctions"/>
+		<exclude name="PHPCompatibility.FunctionUse.NewNamedParameters"/>
+		<exclude name="PHPCompatibility.Generators.NewGeneratorReturn"/>
+		<exclude name="PHPCompatibility.Generators.NewYieldFromComment"/>
+		<exclude name="PHPCompatibility.IniDirectives.NewIniDirectives"/>
+		<exclude name="PHPCompatibility.InitialValue.NewConstantArraysUsingConst"/>
+		<exclude name="PHPCompatibility.InitialValue.NewConstantArraysUsingDefine"/>
+		<exclude name="PHPCompatibility.InitialValue.NewConstantScalarExpressions"/>
+		<exclude name="PHPCompatibility.InitialValue.NewHeredoc"/>
+		<exclude name="PHPCompatibility.InitialValue.NewNewInDefine"/>
+		<exclude name="PHPCompatibility.InitialValue.NewNewInInitializers"/>
+		<exclude name="PHPCompatibility.Interfaces.NewInterfaces"/>
+		<exclude name="PHPCompatibility.Interfaces.NewPropertiesInInterfaces"/>
+		<exclude name="PHPCompatibility.Keywords.NewKeywords"/>
+		<exclude name="PHPCompatibility.LanguageConstructs.NewEmptyNonVariable"/>
+		<exclude name="PHPCompatibility.LanguageConstructs.NewLanguageConstructs"/>
+		<exclude name="PHPCompatibility.Lists.NewKeyedList"/>
+		<exclude name="PHPCompatibility.Lists.NewListReferenceAssignment"/>
+		<exclude name="PHPCompatibility.Lists.NewShortList"/>
+		<exclude name="PHPCompatibility.MethodUse.NewDirectCallsToClone"/>
+		<exclude name="PHPCompatibility.Miscellaneous.NewPHPOpenTagEOF"/>
+		<exclude name="PHPCompatibility.Numbers.NewExplicitOctalNotation"/>
+		<exclude name="PHPCompatibility.Numbers.NewNumericLiteralSeparator"/>
+		<exclude name="PHPCompatibility.Operators.NewOperators"/>
+		<exclude name="PHPCompatibility.Operators.NewShortTernary"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewArrayMergeRecursiveWithGlobalsVar"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewArrayReduceInitialType"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewAssertCustomException"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewClassAliasInternalClass"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewExitAsFunctionCall"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewFopenModes"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewHTMLEntitiesEncodingDefault"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewHTMLEntitiesFlagsDefault"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewHashAlgorithms"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewIDNVariantDefault"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewIconvMbstringCharsetDefault"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewNegativeStringOffset"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewNumberFormatMultibyteSeparators"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewPCREModifiers"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewPackFormat"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewPasswordAlgoConstantValues"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewProcOpenCmdArray"/>
+		<exclude name="PHPCompatibility.ParameterValues.NewStripTagsAllowableTagsArray"/>
+		<exclude name="PHPCompatibility.Syntax.NewArrayStringDereferencing"/>
+		<exclude name="PHPCompatibility.Syntax.NewArrayUnpacking"/>
+		<exclude name="PHPCompatibility.Syntax.NewClassMemberAccess"/>
+		<exclude name="PHPCompatibility.Syntax.NewClassMemberAccessWithoutParentheses"/>
+		<exclude name="PHPCompatibility.Syntax.NewDynamicAccessToStatic"/>
+		<exclude name="PHPCompatibility.Syntax.NewDynamicClassConstantFetch"/>
+		<exclude name="PHPCompatibility.Syntax.NewFirstClassCallables"/>
+		<exclude name="PHPCompatibility.Syntax.NewFlexibleHeredocNowdoc"/>
+		<exclude name="PHPCompatibility.Syntax.NewFunctionArrayDereferencing"/>
+		<exclude name="PHPCompatibility.Syntax.NewFunctionCallTrailingComma"/>
+		<exclude name="PHPCompatibility.Syntax.NewInterpolatedStringDereferencing"/>
+		<exclude name="PHPCompatibility.Syntax.NewMagicConstantDereferencing"/>
+		<exclude name="PHPCompatibility.Syntax.NewNestedStaticAccess"/>
+		<exclude name="PHPCompatibility.Syntax.NewShortArray"/>
+		<exclude name="PHPCompatibility.TextStrings.NewUnicodeEscapeSequence"/>
+		<exclude name="PHPCompatibility.TypeCasts.NewTypeCasts"/>
+		<exclude name="PHPCompatibility.UseDeclarations.NewGroupUseDeclarations"/>
+		<exclude name="PHPCompatibility.UseDeclarations.NewUseConstFunction"/>
+		<exclude name="PHPCompatibility.Variables.NewUniformVariableSyntax"/>
+
+		<!-- Also new-feature checks: parameters, or abstract private trait methods, that older PHP versions require or reject. -->
+		<exclude name="PHPCompatibility.FunctionUse.RequiredToOptionalFunctionParameters"/>
+		<exclude name="PHPCompatibility.FunctionDeclarations.AbstractPrivateMethods.InTrait"/>
+
+		<!-- Behavior changes from PHP 7.0 to 7.3: already in effect on any PHP 7.4 site. -->
+		<exclude name="PHPCompatibility.ControlStructures.DiscouragedSwitchContinue"/>
+		<exclude name="PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue"/>
+		<exclude name="PHPCompatibility.Lists.AssignmentOrder"/>
+
+		<!-- Advice rather than incompatibilities. -->
+		<exclude name="PHPCompatibility.FunctionNameRestrictions.ReservedFunctionNames"/>
+		<exclude name="PHPCompatibility.Interfaces.RemovedSerializable.MissingInterface"/>
+		<exclude name="PHPCompatibility.Interfaces.RemovedSerializable.RedundantSerializableExtension"/>
+		<exclude name="PHPCompatibility.Interfaces.RemovedSerializable.RedundantSerializableImplementation"/>
+	</rule>
+
+</ruleset>
