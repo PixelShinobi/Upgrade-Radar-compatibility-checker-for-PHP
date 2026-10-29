@@ -180,7 +180,7 @@ final class FileReport {
 	}
 
 	/**
-	 * Number of errors found.
+	 * Number of errors found, not counting possible false alarms.
 	 *
 	 * @return int
 	 */
@@ -189,19 +189,35 @@ final class FileReport {
 			array_filter(
 				$this->issues,
 				static function ( Issue $issue ): bool {
-					return $issue->is_error();
+					return $issue->is_error() && ! $issue->is_possible_false_alarm();
 				}
 			)
 		);
 	}
 
 	/**
-	 * Number of warnings found.
+	 * Number of warnings found, not counting possible false alarms.
 	 *
 	 * @return int
 	 */
 	public function warning_count(): int {
-		return count( $this->issues ) - $this->error_count();
+		return count( $this->issues ) - $this->error_count() - $this->false_alarm_count();
+	}
+
+	/**
+	 * Number of findings, errors or warnings, that are possible false alarms.
+	 *
+	 * @return int
+	 */
+	public function false_alarm_count(): int {
+		return count(
+			array_filter(
+				$this->issues,
+				static function ( Issue $issue ): bool {
+					return $issue->is_possible_false_alarm();
+				}
+			)
+		);
 	}
 
 	/**
