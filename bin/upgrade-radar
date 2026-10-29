@@ -1,0 +1,19 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Upgrade Radar's scanner on the command line, without WordPress.
+ *
+ * Usage: bin/upgrade-radar scan --php=8.3 path/to/plugin [more paths...]
+ *
+ * @package UpgradeRadar
+ */
+
+if ( 'cli' !== PHP_SAPI ) {
+	exit( 1 );
+}
+
+// Composer 2.2+ sets this when the tool runs from another project's vendor/bin.
+require $GLOBALS['_composer_autoload_path'] ?? dirname( __DIR__ ) . '/vendor/autoload.php';
+
+$upgrade_radar_status = ( new UpgradeRadar\Scanner\Cli( STDOUT, STDERR ) )->run( array_slice( $argv, 1 ) );
+exit( (int) $upgrade_radar_status );
