@@ -46,7 +46,7 @@ _Upgrade Radar – compatibility checker for PHP. Last updated Oct 29, 2026._
 
 1. **Engine:** a WordPress-free scanner library plus a CLI, tested on fixture code with known PHP 8.1–8.4 breaks. **Done Oct 29**, see [Milestone 1 results](#milestone-1-results).
 2. **Plugin:** admin screen, background batching and results UI; manual test in a Docker WordPress. **Done Oct 29**, see [Milestone 2 results](#milestone-2-results).
-3. **Submit:** readme.txt and screenshots, a clean Plugin Check run, then submit to WordPress.org.
+3. **Submit:** readme.txt and screenshots, a clean Plugin Check run, then submit to WordPress.org. **Ready to submit Oct 29**, see [Milestone 3 results](#milestone-3-results). Submitting is the owner's step.
 4. **Launch watch:** track installs, reviews and support threads.
 5. **Paid service:** only if the numbers below say so.
 
@@ -128,6 +128,29 @@ A finding is a possible false alarm when the code it's in only runs if a guard h
 **Results:** on WordPress core for PHP 8.5, findings went from 3 errors and 44 warnings to 0 errors, 11 warnings and 36 possible false alarms, with the guard checked by hand for each. In the end-to-end test, the plugin bundling getID3 is now Ready. The analysis adds no measurable scan time.
 
 **Not handled yet:** guards in another function or stored in a variable, `for`, `foreach` and `switch`, `else` without braces, and guards inside arrow functions or square brackets. These stay findings.
+
+## Milestone 3 results
+
+`bin/build-release` builds the release zip, `build/upgrade-radar.zip`: 1.6 MB, 8.0 MB unzipped, 827 files. WordPress.org takes up to 10 MB.
+
+**What's in the zip:** the plugin's own files, `composer.json` (reviewers look there to see where `vendor/` comes from), and the production dependencies without their tests, docs and scripts. Not `tests/` (the fixtures are PHP that's broken on purpose), `bin/`, `docker/`, `tools/`, `.github/`, `.wordpress-org/`, the docs or the dev config. `src/Scanner/Cli.php` stays out too: only `bin/upgrade-radar` uses it.
+
+**Prefixing:** PHP-Scoper prefixes PHP_CodeSniffer, PHPCSUtils and PHPCompatibility with `UpgradeRadarVendor\`, as milestone 1 tried. It reprints every file it prefixes. That's fine for the dependencies but not for our code: it dropped our coding standard and moved `phpcs:ignore` comments to other lines, where Plugin Check no longer saw them. So our code skips PHP-Scoper: `bin/prefix-scanner.php` prefixes the 10 names in `src/Scanner` that refer to the dependencies (9 imports and a class name in a string) and stops on any namespace it doesn't know. The rest of `src/` goes in as it is: it uses WordPress classes such as `WP_Theme`, which PHP-Scoper would have prefixed too. A Composer classmap autoloads the prefixed classes.
+
+**Checks on the zip**
+- **Fixtures:** the built plugin gives the same findings as the development copy in all 40 fixture scans, on PHP 7.4 and 8.3, also with another plugin's unprefixed PHP_CodeSniffer loaded first.
+- **Release check** (`tests/release/run.sh`): installs the zip with WP-CLI on a fresh WordPress, as a user would, sets up the end-to-end site and runs its full scan for PHP 8.4: 10 requests, the slowest 15.4 s, 135 s in all, with every verdict as expected. CI runs it on pull requests.
+- **Plugin Check 2.1.0** (`tests/release/plugin-check.sh`, cloned from GitHub; CI runs it after the release check): the first run found 33 errors and 4 warnings. Now it finds nothing.
+  - **22 errors: exception messages in the engine aren't escaped** (12 `throw`s). The engine runs without WordPress, so it can't call `esc_html()`. Its messages are plain text, and the WordPress code escapes them where it shows them, as milestone 1 planned: `esc_html()`, or `textContent` in the page's script. Each `throw` says so in a `phpcs:ignore` comment. `composer lint` used to skip these sniffs for the whole engine. Now it only skips `bin/` and the command-line class, so CI catches a new one before Plugin Check would.
+  - **11 errors in `src/Scanner/Cli.php`** (`fwrite()` and exception messages): it's left out of the zip.
+  - **3 warnings about the error handler around PHP_CodeSniffer** (`set_error_handler()`, and `error_reporting()`, read to respect `@`). They had `phpcs:ignore` comments, which PHP-Scoper had moved. The comment now names Plugin Check's own sniff for `error_reporting()` too.
+  - **1 warning: no `composer.json` next to `vendor/`.** The zip has ours now.
+
+  Installing Plugin Check makes WordPress forget its update data, so it runs after the scan.
+
+**readme.txt:** description, installation, FAQ, screenshots and changelog, tested with WordPress 7.1.4. The FAQ says plainly that results can include false alarms, how possible false alarms are marked, and which PHP changes PHPCompatibility 10.0.0-alpha2 can't detect yet.
+
+**Assets** (`.wordpress-org/`, for the `assets` folder in the plugin's SVN): an original icon (256 and 128 px) and banner (1544×500 and 772×250), drawn as SVG (`source/`) and rendered to PNG with Chromium. The 3 screenshots come from the release check site: the verdicts for PHP 8.4, one plugin's problems with its possible false alarms, and a scan in progress.
 
 ## Numbers that decide what happens next
 

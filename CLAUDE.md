@@ -16,7 +16,7 @@ The plugin is **Upgrade Radar – compatibility checker for PHP**. Use `upgrade-
 - Cloud session quirks: the Docker daemon may need starting (`dockerd > /tmp/dockerd.log 2>&1 &`), and Docker Hub can rate-limit pulls (`mirror.gcr.io/library/<image>` works). Run Composer with `COMPOSER_ALLOW_SUPERUSER=1` so the PHPCS installer plugin runs. GitHub zip downloads are blocked, so a fresh `composer install` falls back to git clones and takes a few minutes. downloads.wordpress.org is blocked too: for real plugin code, use the WordPress Docker image or clone plugins from GitHub.
 - To prove PHP 7.4 support, run the tests in Docker: `docker run --rm -v "$PWD":/app -w /app php:7.4-cli vendor/bin/phpunit`.
 
-## Layout (milestone 1 built the engine, milestone 2 the plugin)
+## Layout (milestone 1 built the engine, milestone 2 the plugin, milestone 3 the release)
 
 ```
 upgrade-radar.php         plugin bootstrap (plugin header, GPLv2-or-later); src/Plugin.php wires the hooks
@@ -29,15 +29,20 @@ assets/                   the admin page's script and styles
 uninstall.php             removes the plugin's options and scheduled event
 src/Cli/                  WP-CLI command (optional in v1)
 bin/upgrade-radar         standalone CLI for the engine, no WordPress needed
+bin/build-release         builds build/upgrade-radar.zip: prefixed with PHP-Scoper, only what users need
+bin/prefix-scanner.php    used by bin/build-release: prefixes the dependencies' names in src/Scanner, changing nothing else
 tests/Unit/               PHPUnit tests for the engine and the verdicts
 tests/fixtures/           breaks/phpXY.php (changes from PHP X.Y), clean/, edge/ and guards/ sample code
 tests/e2e/                end-to-end test in the Docker WordPress (run.sh, setup.php, scan.php)
-scoper.inc.php            PHP-Scoper config for prefixing vendor code in the release build
-readme.txt                WordPress.org readme                                        milestone 3
+tests/release/            release check: the zip on a fresh WordPress (run.sh), and Plugin Check (plugin-check.sh)
+tools/php-scoper/         PHP-Scoper for bin/build-release, apart from our dependencies (needs PHP 8.2)
+scoper.inc.php            PHP-Scoper config for the release build: prefixes vendor/
+readme.txt                WordPress.org readme; license.txt is the GPLv2 text
+.wordpress-org/           WordPress.org assets: icon, banner (SVG source in source/) and screenshots
 docker-compose.yml        local WordPress for manual tests (docker/php/ has its php.ini, docker/apache/ makes WP-Cron work)
 ```
 
-Fixtures mark each expected finding at the end of its line with `// expect: error <sniff code>`, adding ` (false alarm)` for a possible false alarm. The tests compare those markers with what the scanner finds, for every target version. Our code follows the WordPress Coding Standards (tabs, snake_case methods, `array()`), with PSR-4 class files under `src/`.
+Fixtures mark each expected finding at the end of its line with `// expect: error <sniff code>`, adding ` (false alarm)` for a possible false alarm. The tests compare those markers with what the scanner finds, for every target version. Our code follows the WordPress Coding Standards (tabs, snake_case methods, `array()`), with PSR-4 class files under `src/`. Plugin Check runs on everything in the release zip, the WordPress-free engine included, so `composer lint` only exempts `bin/` and `src/Scanner/Cli.php` (which the zip leaves out) from WordPress's escaping and file-function sniffs. Where a finding is wrong, a `phpcs:ignore` comment says why.
 
 ## Commands
 
@@ -47,6 +52,8 @@ Fixtures mark each expected finding at the end of its line with `// expect: erro
 - `bin/upgrade-radar scan --php=8.3 <path>...`: scan plugin or theme code from the command line
 - `docker compose up -d`: WordPress at http://localhost:8080
 - `tests/e2e/run.sh`: end-to-end test in that WordPress, about ten minutes. After its setup, don't run `wp plugin list` or `wp theme list`: they check for updates, which wipes the update data the verdicts are tested against.
+- `bin/build-release`: the release zip, `build/upgrade-radar.zip`. It must stay under 10 MB.
+- `tests/release/run.sh`: installs the release zip on a fresh WordPress at http://localhost:8081 and runs a full scan. Then `tests/release/plugin-check.sh` runs Plugin Check on it.
 
 ## Hard rules
 
