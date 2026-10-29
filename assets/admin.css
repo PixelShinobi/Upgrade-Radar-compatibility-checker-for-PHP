@@ -115,6 +115,14 @@
 	color: #996800;
 }
 
+.upgrade-radar-type--false-alarm {
+	color: #646970;
+}
+
+.upgrade-radar-guard code {
+	font-size: 12px;
+}
+
 /* On phones the count columns don't fit. The verdict and the problem list say enough. */
 @media screen and (max-width: 782px) {
 	.upgrade-radar-results .num {
