@@ -38,10 +38,11 @@
 		</properties>
 	</rule>
 
-	<!-- Classes are autoloaded with PSR-4, so file names match class names. -->
+	<!-- Classes are autoloaded with PSR-4, so file names match class names. scoper.inc.php is PHP-Scoper's default name. -->
 	<rule ref="WordPress.Files.FileName">
 		<exclude-pattern>/src/*</exclude-pattern>
 		<exclude-pattern>/tests/*</exclude-pattern>
+		<exclude-pattern>/scoper\.inc\.php$</exclude-pattern>
 	</rule>
 
 	<!--
