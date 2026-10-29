@@ -49,18 +49,19 @@
 	</rule>
 
 	<!--
-	The scanner engine and the standalone CLI run without WordPress, so
-	WordPress's file functions and escaping functions don't exist there.
-	Whatever shows the engine's messages in WordPress escapes them on output.
+	The standalone CLI runs without WordPress, so WordPress's file functions
+	and escaping functions don't exist there. It isn't in the release zip.
+	The engine runs without WordPress too, but it is in the zip, where Plugin
+	Check runs these sniffs, so its exceptions say why their messages are safe.
 	-->
 	<rule ref="WordPress.WP.AlternativeFunctions">
 		<exclude-pattern>/bin/*</exclude-pattern>
-		<exclude-pattern>/src/Scanner/*</exclude-pattern>
+		<exclude-pattern>/src/Scanner/Cli\.php$</exclude-pattern>
 		<exclude-pattern>/tests/*</exclude-pattern>
 	</rule>
 	<rule ref="WordPress.Security.EscapeOutput.ExceptionNotEscaped">
 		<exclude-pattern>/bin/*</exclude-pattern>
-		<exclude-pattern>/src/Scanner/*</exclude-pattern>
+		<exclude-pattern>/src/Scanner/Cli\.php$</exclude-pattern>
 	</rule>
 
 </ruleset>
