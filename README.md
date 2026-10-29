@@ -18,7 +18,7 @@ Each plugin and theme gets one verdict for that PHP version:
 - **No compatible version yet:** it's the latest version and still breaks. Ask its developer, or look for a replacement.
 - **Needs a developer:** WordPress can't check it for updates, so it's custom code or from outside WordPress.org, and it breaks.
 
-Verdicts use the update data WordPress already has, without contacting any server. Each item's problems are listed by file and line, and **Download CSV** exports all of them. The checks come from alpha releases of PHPCompatibility, so some findings may be false alarms.
+Verdicts use the update data WordPress already has, without contacting any server. Each item's problems are listed by file and line, and **Download CSV** exports all of them. The checks come from alpha releases of PHPCompatibility, so some findings may be false alarms. Findings in code that never runs on the chosen version, such as code behind `if ( PHP_VERSION_ID < 80000 )`, are marked as possible false alarms and don't affect the verdict.
 
 ## Development
 
@@ -72,6 +72,7 @@ The engine in `src/Scanner/` runs [PHP_CodeSniffer](https://github.com/PHPCSStan
 - **Errors** are code that breaks on the target version. **Warnings** are code that's deprecated there and still works.
 - **No new-feature checks.** PHPCompatibility also flags features that are newer than 7.4, but code that runs on a site today already handles those, so for an upgrade they're false alarms. `src/Scanner/ruleset.xml` lists everything excluded and why.
 - **Annotations:** `phpcs:ignore` and `phpcs:disable` comments count only when they name a PHPCompatibility sniff. Authors use those to mark reviewed false alarms. Other annotations, and `phpcs:ignoreFile`, are usually there for other rule sets and don't hide breaks.
+- **Possible false alarms:** a finding in code that only runs when a guard is false on the target version is listed, but doesn't count as an error or a warning. The guard can be a version check, such as `if ( PHP_VERSION_ID < 80000 )`, evaluated for every release of the target, or a check for the very function, class or constant the finding says PHP removed, such as `function_exists( 'each' )` around `each()`. Checks of anything else prove nothing, so declaration guards like `if ( ! function_exists( 'foo' ) ) { function foo() { … } }` never excuse the code inside them, and neither does any guard around syntax that no longer compiles.
 - **Big files:** a file that would need more memory than the server allows is skipped and reported as not checked. Scans run in resumable batches, and a file that still crashes the PHP process is skipped on the next try.
 
 The rules are pinned to PHPCompatibilityWP 3.0.0-alpha2 and PHPCompatibility 10.0.0-alpha2. These are alpha releases, so some findings may be false alarms. To reproduce a scan with plain PHP_CodeSniffer (which honors every annotation):

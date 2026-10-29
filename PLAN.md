@@ -67,7 +67,7 @@ The engine lives in `src/Scanner/`, with `bin/upgrade-radar` as its command-line
 - **Speed and memory:** 10–40 ms per file. The biggest files take 0.5–3 s and need about 1 KB of memory per token. A PHPCSUtils cache grew by about 100 KB per file, so the engine clears it after each one. Files that wouldn't fit in the free memory are skipped and reported as not checked.
 - **Under host limits:** in the Docker WordPress, with `exec()` disabled, a 30 s limit and 128 MB, a site's plugins and themes plus a 1,301-file plugin took 4 requests of at most 15.2 s and 76 MB each.
 - **Real plugins:** no findings for Contact Form 7, Yoast SEO (3,257 files), Classic Editor, Akismet or the default themes. Elementor got 16 warnings, all real PHP 8.0 and 8.4 deprecations. 2015 versions of NextGEN Gallery, WP Super Cache and All in One SEO showed real breaks: `create_function()`, `$string{0}` and PHP 4 constructors.
-- **Bundled code that's guarded:** WordPress core still gets 4 errors and 14 warnings, for calls behind `function_exists()` or version checks, such as `get_magic_quotes_gpc()` in getID3. Plugins that bundle such libraries will show the same false alarms.
+- **Bundled code that's guarded:** WordPress core still gets 4 errors and 14 warnings, for calls behind `function_exists()` or version checks, such as `get_magic_quotes_gpc()` in getID3. Plugins that bundle such libraries will show the same false alarms. (Since then, [possible false alarms](#possible-false-alarms) handle these.)
 - **Release size:** the vendor directory without tests and docs is 9.7 MB, about 2 MB zipped. The release zip must leave out `tests/`, `bin/` and `docker/`: the fixtures are PHP that's broken on purpose, which Plugin Check and possibly WordPress.org's SVN checks would reject.
 
 **Not detected by PHPCompatibility 10.0.0-alpha2:** passing null to non-nullable built-in parameters (8.1), dynamic properties (8.2), the `HTML-ENTITIES` mbstring encoding and callables such as `'self::method'` (8.2), and `++` on non-alphanumeric strings (8.3).
@@ -97,13 +97,7 @@ The plugin is `upgrade-radar.php` with `src/Admin/` and `src/Jobs/`. Tools → U
 
 Verdicts are worked out when the page shows them, so they follow WordPress's update checks without a new scan. Items updated or deactivated since the scan show "Scan again".
 
-**Skipped: marking possible false alarms.** Findings inside `function_exists()`, `class_exists()` or PHP version checks were to show as "possible false alarm" and not decide the verdict. That's more than a small change, because a simple version would hide real breaks:
-- `if ( ! class_exists( 'Foo' ) ) { class Foo { … } }` and `if ( ! function_exists( 'foo' ) ) { function foo() { … } }` are how bundled libraries and pluggable functions are declared, so the guarded code is the code that runs.
-- A guard only excuses a finding when it checks the very function or class the finding is about, such as `get_magic_quotes_gpc()` inside `if ( function_exists( 'get_magic_quotes_gpc' ) )`.
-- Version checks (`PHP_VERSION`, `PHP_VERSION_ID`, `version_compare()`) have to be evaluated against the target to know which branch runs there.
-- Syntax that no longer compiles, such as `$string{0}`, breaks the whole file whatever the guard.
-
-A safe version needs that symbol matching and version evaluation, with tests for each pattern: about 250 lines. Until then, plugins that bundle guarded legacy code get errors from it. In the end-to-end test, a plugin bundling WordPress's copy of getID3 gets "No compatible version yet" from 2 guarded calls to `get_magic_quotes_*()`. Worth building after launch if users report such false alarms.
+**Possible false alarms:** built right after milestone 2, see [Possible false alarms](#possible-false-alarms).
 
 **End-to-end test** (`tests/e2e/run.sh`, about ten minutes), in the Docker WordPress with `exec()` disabled, a 30 s limit and 128 MB. The site has 35 plugins (3,593 PHP files, mostly WordPress core code split into 26 plugins) and a child theme, with update data set up for each verdict:
 - **Full scan for PHP 8.4:** 9 AJAX requests, the slowest 15.5 s, 113 s in all. Every verdict as expected, the 2.9 MB file reported as not checked, and every finding in the CSV.
@@ -118,6 +112,22 @@ A safe version needs that symbol matching and version evaluation, with tests for
 - **Release zip:** build with PHP-Scoper, and leave out `tests/`, `bin/`, `docker/` and the dev config files.
 - **Screenshots:** the end-to-end site shows every verdict.
 - **Without WP-Cron:** with `DISABLE_WP_CRON` and no real cron, scans only run while the page is open. The page says so.
+
+## Possible false alarms
+
+A finding is a possible false alarm when the code it's in only runs if a guard has a value it never has on the target version. It stays visible, marked "possible false alarm" with the guard it depends on, but it doesn't count as an error or a warning, so it never decides the verdict. The analysis is in `src/Scanner/Guards/` and runs on PHP_CodeSniffer's tokens right after each file is scanned.
+
+**What excuses a finding**
+- **Version checks**, evaluated for every release of the target, 8.4.0 to 8.4.99: `PHP_VERSION_ID`, `PHP_MAJOR_VERSION`, `PHP_MINOR_VERSION`, `PHP_RELEASE_VERSION`, `version_compare()` with `PHP_VERSION` or `phpversion()`, comparisons, `!`, `&&`, `||`, `and`, `or`. A check that's true for some releases of the target excuses nothing.
+- **Existence checks of the very symbol a finding says PHP removed:** `function_exists( 'each' )` or `is_callable( 'each' )` around `each()`, `class_exists()` or `interface_exists()` around a removed class, `defined()` around a removed constant. A check of anything else is unknown, so `if ( ! function_exists( 'foo' ) ) { function foo() { … } }` never excuses the code inside it: declaration guards and polyfills stay findings. Deprecated functions still exist, so checks for them excuse nothing either.
+
+**Where guards are found:** enclosing `if`, `elseif` and `else` branches (braces, alternative syntax or none), `while` bodies, earlier operands of `&&`, `||`, `and`, `or` and ternaries, also inside an `if` condition, and early exits from the same block, such as `if ( ! function_exists( 'x' ) ) { return; }`. Anything unrecognized, like a variable or a call to another function, is unknown, and unknown never excuses.
+
+**Never excused:** findings from sniffs about code PHP rejects or warns about when it compiles the file, such as `$string{0}`, `(real)` casts, nested ternaries without parentheses or `${var}` in strings. Only the 15 sniffs about code as it runs can be excused (`FalseAlarms::RUNTIME_SNIFFS`).
+
+**Results:** on WordPress core for PHP 8.5, findings went from 3 errors and 44 warnings to 0 errors, 11 warnings and 36 possible false alarms, with the guard checked by hand for each. In the end-to-end test, the plugin bundling getID3 is now Ready. The analysis adds no measurable scan time.
+
+**Not handled yet:** guards in another function or stored in a variable, `for`, `foreach` and `switch`, `else` without braces, and guards inside arrow functions or square brackets. These stay findings.
 
 ## Numbers that decide what happens next
 
