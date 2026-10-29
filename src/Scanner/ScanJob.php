@@ -16,8 +16,8 @@ use InvalidArgumentException;
  *
  * Running out of memory or time is fatal and can't be caught, so the job hands
  * its state to a checkpoint callback before risky work. If a batch never
- * finished, the next one redoes it a file at a time with a checkpoint before
- * each, and a file that stops the process again is skipped as crashed.
+ * finished, the next batches redo its files one per batch, each in a fresh
+ * request, and a file that stops the process again is skipped as crashed.
  */
 final class ScanJob {
 
@@ -59,8 +59,8 @@ final class ScanJob {
 	private $processed = 0;
 
 	/**
-	 * While fewer files than this are processed, scan one at a time with a
-	 * checkpoint before each, because a batch covering them never finished.
+	 * While fewer files than this are processed, scan one file per batch with a
+	 * checkpoint before it, because a batch covering them never finished.
 	 *
 	 * @var int
 	 */
@@ -156,11 +156,13 @@ final class ScanJob {
 
 		try {
 			while ( $done < $max_files && ! $this->is_done() ) {
-				if ( $done > 0 && microtime( true ) - $started >= $max_seconds ) {
+				// A file under suspicion gets a fresh request of its own, so if the
+				// process dies again, it's that file's fault and not the clock's.
+				$careful = $this->processed < $this->careful_until;
+				if ( $done > 0 && ( $careful || microtime( true ) - $started >= $max_seconds ) ) {
 					break;
 				}
 
-				$careful = $this->processed < $this->careful_until;
 				if ( $careful || $saved_as !== $careful ) {
 					$this->open_batch = array(
 						'at'      => $this->processed,
@@ -311,7 +313,7 @@ final class ScanJob {
 		}
 
 		if ( ! $batch['careful'] ) {
-			// Redo the batch a file at a time to find the file that stops the process.
+			// Redo the batch one file per request, to find the file that stops the process.
 			$this->careful_until = max( $this->careful_until, $batch['at'] + $batch['size'] );
 			return;
 		}

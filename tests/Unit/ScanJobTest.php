@@ -102,8 +102,8 @@ final class ScanJobTest extends TestCase {
 	}
 
 	/**
-	 * A file that kills the process is found by redoing the batch one file at
-	 * a time, and skipped when it kills the process again.
+	 * A file that kills the process is found by redoing the batch one file per
+	 * request, and skipped when it kills the process again.
 	 */
 	public function test_skips_a_file_that_keeps_crashing_the_process(): void {
 		$scanner = new CrashingScanner(
@@ -113,40 +113,47 @@ final class ScanJobTest extends TestCase {
 			),
 			array( 'plugin/b.php' )
 		);
-		$saved   = array();
-		$save    = static function ( array $state ) use ( &$saved ) {
-			$saved = $state;
-		};
-		$target  = TargetVersion::from_string( '8.3' );
 
-		// Request 1: a normal batch dies at b.php. Only the checkpoint from
-		// before the batch survives.
-		$job = ScanJob::create(
-			$target,
+		list( $outcomes, $job ) = $this->run_requests(
+			$scanner,
 			array(
 				'plugin' => 'plugin',
 				'theme'  => 'theme',
 			)
 		);
-		$this->assert_crashes( $job, $scanner, $save );
-		$this->assertSame( 0, $saved['processed'] );
-		$this->assertFalse( $saved['open_batch']['careful'] );
 
-		// Request 2: the batch is redone a file at a time, and dies at b.php again.
-		$this->assert_crashes( ScanJob::from_array( $saved ), $scanner, $save );
-		$this->assertSame( 1, $saved['processed'] );
-		$this->assertTrue( $saved['open_batch']['careful'] );
-
-		// Request 3: b.php is skipped and the rest gets scanned.
-		$job = ScanJob::from_array( $saved );
-		$job->run_batch( $scanner, 10, INF, $save );
-		$this->assertTrue( $job->is_done() );
+		// A normal batch dies at b.php. Then a.php gets a request of its own, and
+		// so does b.php, which dies again. b.php is skipped, and the files after
+		// it get a request each until the batch that died is covered.
+		$this->assertSame( array( 'crashed', 'ok', 'crashed', 'ok', 'ok', 'ok' ), $outcomes );
 		$this->assertSame( array( 'plugin/a.php', 'plugin/b.php', 'plugin/a.php', 'plugin/b.php', 'plugin/c.php', 'plugin/d.php', 'theme/e.php' ), $scanner->scanned );
 
 		$reports = $job->results()[0]->reports();
 		$this->assertCount( 1, $reports );
 		$this->assertSame( array( 'b.php', FileReport::FAILED, FileReport::REASON_CRASHED ), array( $reports[0]->path(), $reports[0]->status(), $reports[0]->reason() ) );
 		$this->assertSame( 4, $job->results()[0]->files_processed() );
+		$this->assertSame( ScanJob::ITEM_DONE, $job->results()[1]->status() );
+	}
+
+	/**
+	 * After the batch that died is covered, batches are full size again.
+	 */
+	public function test_goes_back_to_full_batches_after_a_crash(): void {
+		$files   = array_map(
+			static function ( int $n ): string {
+				return 'file-' . $n . '.php';
+			},
+			range( 1, 30 )
+		);
+		$scanner = new CrashingScanner( array( 'plugin' => $files ), array( 'plugin/file-3.php' ) );
+
+		list( $outcomes ) = $this->run_requests( $scanner, array( 'plugin' => 'plugin' ) );
+
+		// Files 1 to 10 were in the batch that died, so each gets a request of
+		// its own, and file 3 crashes again. The request for file 10 goes on
+		// with a full batch, and one more request finishes the scan.
+		$this->assertSame( array_merge( array( 'crashed', 'ok', 'ok', 'crashed' ), array_fill( 0, 7, 'ok' ), array( 'ok', 'ok' ) ), $outcomes );
+		$this->assertCount( 30 + 3, $scanner->scanned, 'Files 1, 2 and 3 are scanned twice.' );
 	}
 
 	/**
@@ -154,27 +161,16 @@ final class ScanJobTest extends TestCase {
 	 */
 	public function test_skips_an_item_whose_listing_keeps_crashing(): void {
 		$scanner = new CrashingScanner( array( 'theme' => array( 'e.php' ) ), array( 'plugin' ) );
-		$saved   = array();
-		$save    = static function ( array $state ) use ( &$saved ) {
-			$saved = $state;
-		};
 
-		$this->assert_crashes(
-			ScanJob::create(
-				TargetVersion::from_string( '8.3' ),
-				array(
-					'plugin' => 'plugin',
-					'theme'  => 'theme',
-				)
-			),
+		list( $outcomes, $job ) = $this->run_requests(
 			$scanner,
-			$save
+			array(
+				'plugin' => 'plugin',
+				'theme'  => 'theme',
+			)
 		);
-		$this->assert_crashes( ScanJob::from_array( $saved ), $scanner, $save );
 
-		$job = ScanJob::from_array( $saved );
-		$job->run_batch( $scanner, 10, INF, $save );
-		$this->assertTrue( $job->is_done() );
+		$this->assertSame( array( 'crashed', 'crashed', 'ok' ), $outcomes );
 		$this->assertSame( ScanJob::ITEM_MISSING, $job->results()[0]->status() );
 		$this->assertStringContainsString( 'listing the files', $job->results()[0]->detail() );
 		$this->assertSame( ScanJob::ITEM_DONE, $job->results()[1]->status() );
@@ -280,19 +276,36 @@ final class ScanJobTest extends TestCase {
 	}
 
 	/**
-	 * Runs a batch that must crash.
+	 * Runs batches of 10 files the way a host would, one per request, until
+	 * the scan is done. When a batch crashes, only its last checkpoint
+	 * survives, as when PHP dies.
 	 *
-	 * @param ScanJob         $job     The job.
-	 * @param CrashingScanner $scanner The fake scanner.
-	 * @param callable        $save    Checkpoint callback.
+	 * @param CrashingScanner       $scanner The fake scanner.
+	 * @param array<string, string> $items   Items to scan.
+	 * @return array{0: string[], 1: ScanJob} What happened in each request ("ok" or "crashed"), and the finished job.
 	 */
-	private function assert_crashes( ScanJob $job, CrashingScanner $scanner, callable $save ): void {
-		try {
-			$job->run_batch( $scanner, 10, INF, $save );
-			$this->fail( 'The batch should have crashed.' );
-		} catch ( RuntimeException $e ) {
-			$this->assertSame( 'Simulated crash', $e->getMessage() );
-		}
+	private function run_requests( CrashingScanner $scanner, array $items ): array {
+		$saved = ScanJob::create( TargetVersion::from_string( '8.3' ), $items )->to_array();
+		$save  = static function ( array $state ) use ( &$saved ) {
+			$saved = $state;
+		};
+
+		$outcomes = array();
+		do {
+			$job = ScanJob::from_array( $saved );
+			try {
+				$job->run_batch( $scanner, 10, INF, $save );
+				$saved      = $job->to_array();
+				$outcomes[] = 'ok';
+			} catch ( RuntimeException $e ) {
+				$this->assertSame( 'Simulated crash', $e->getMessage() );
+				$outcomes[] = 'crashed';
+			}
+
+			$this->assertLessThan( 50, count( $outcomes ), 'The scan must finish.' );
+		} while ( ! ScanJob::from_array( $saved )->is_done() );
+
+		return array( $outcomes, ScanJob::from_array( $saved ) );
 	}
 
 	/**
