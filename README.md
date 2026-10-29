@@ -2,10 +2,23 @@
 
 A WordPress plugin that tells site owners whether their plugins and theme are ready for a newer PHP version, with one plain-English verdict per item.
 
-**Status:** milestone 1 (the scanning engine and a command-line tool) is done. The WordPress plugin itself comes in milestone 2. v1 is targeted for the weekend of Oct 31 – Nov 1, 2026.
+**Status:** milestones 1 (the scanning engine and a command-line tool) and 2 (the WordPress plugin) are done. Milestone 3 prepares the WordPress.org submission. v1 is targeted for the weekend of Oct 31 – Nov 1, 2026.
 
 - [`PLAN.md`](PLAN.md): why this, our angle, v1 scope, milestones and the numbers that decide what's next
 - [`CLAUDE.md`](CLAUDE.md): instructions for Claude Code sessions working in this repo
+
+## Using the plugin
+
+Install it in `wp-content/plugins/upgrade-radar` with its `vendor` directory (run `composer install --no-dev` in a git checkout), activate it, and open **Tools → Upgrade Radar**. Pick the PHP version you want to move to and start the scan. It checks the active plugins, the active theme and its parent theme, in short batches so it never runs into the server's time limit. You can leave the page: the scan carries on with WP-Cron, and the page picks up where it is when you come back.
+
+Each plugin and theme gets one verdict for that PHP version:
+
+- **Ready:** nothing breaks. Deprecation warnings are listed, but deprecated code still works.
+- **Update first:** WordPress knows of a newer version, or hasn't checked the installed one for updates yet. Update, then scan again.
+- **No compatible version yet:** it's the latest version and still breaks. Ask its developer, or look for a replacement.
+- **Needs a developer:** WordPress can't check it for updates, so it's custom code or from outside WordPress.org, and it breaks.
+
+Verdicts use the update data WordPress already has, without contacting any server. Each item's problems are listed by file and line, and **Download CSV** exports all of them. The checks come from alpha releases of PHPCompatibility, so some findings may be false alarms.
 
 ## Development
 
@@ -42,6 +55,14 @@ docker compose up -d
 ```
 
 WordPress runs at http://localhost:8080 with this repo mounted read-only as `wp-content/plugins/upgrade-radar`. Its PHP disables `exec()` and friends and allows 30 seconds and 128 MB per request, like a locked-down host. `docker-compose.yml` shows how to install WordPress with WP-CLI, and `docker compose down -v` removes everything.
+
+### End-to-end test
+
+```bash
+tests/e2e/run.sh
+```
+
+It sets up that WordPress with 35 plugins and a child theme, then runs scans through the admin page's endpoints and checks the verdicts, the CSV, the 30-second limit, a rival plugin that loads its own PHP_CodeSniffer, cancelling, and WP-Cron finishing a scan after the page closes. It takes about ten minutes and changes the site, so run `docker compose down -v` afterwards.
 
 ## How the scanner decides
 

@@ -35,7 +35,7 @@ _Upgrade Radar – compatibility checker for PHP. Last updated Oct 29, 2026._
 ## v1: free plugin, one weekend
 
 **In**
-- Admin screen: choose a target PHP version (8.1–8.5) and scan the active plugins and the active theme.
+- Admin screen: choose a target PHP version (8.1–8.5) and scan the active plugins, the active theme and its parent theme.
 - Engine: PHP_CodeSniffer + PHPCompatibilityWP `3.0.0-alpha2` (pinned), run in-process, batched and resumable.
 - Results: a verdict per item, error/warning counts, file:line details, an "update available" hint, and CSV export.
 - If time allows: a WP-CLI command (`wp upgrade-radar scan --php=8.3`), which agencies use.
@@ -45,7 +45,7 @@ _Upgrade Radar – compatibility checker for PHP. Last updated Oct 29, 2026._
 ## Milestones
 
 1. **Engine:** a WordPress-free scanner library plus a CLI, tested on fixture code with known PHP 8.1–8.4 breaks. **Done Oct 29**, see [Milestone 1 results](#milestone-1-results).
-2. **Plugin:** admin screen, background batching and results UI; manual test in a Docker WordPress.
+2. **Plugin:** admin screen, background batching and results UI; manual test in a Docker WordPress. **Done Oct 29**, see [Milestone 2 results](#milestone-2-results).
 3. **Submit:** readme.txt and screenshots, a clean Plugin Check run, then submit to WordPress.org.
 4. **Launch watch:** track installs, reviews and support threads.
 5. **Paid service:** only if the numbers below say so.
@@ -78,6 +78,46 @@ The engine lives in `src/Scanner/`, with `bin/upgrade-radar` as its command-line
 - **Item roots:** take them from WordPress (`get_plugins()`, the active theme) and check they're inside the plugins or themes directory.
 - **Output:** engine messages are plain text, so escape them on output.
 - **Verdicts:** errors decide them. Warnings show as "deprecated, still works" and don't block "Ready".
+
+## Milestone 2 results
+
+The plugin is `upgrade-radar.php` with `src/Admin/` and `src/Jobs/`. Tools → Upgrade Radar picks a target (8.1–8.5, defaulting to the next version above the site's), scans the active plugins, the active theme and its parent theme, and shows one verdict per item, with counts, expandable file:line details, a CSV export and a note that results may include false alarms.
+
+**How scans run**
+- **One batch per request**, each up to half of what's left of the time limit and at most 15 s: the admin page's AJAX calls while it's open, WP-Cron otherwise. WP-Cron leaves the scan alone for 60 s after the page's last batch, so closing the page hands over within a minute.
+- **One batch at a time:** an option row works as a lock (`INSERT IGNORE`, like `WP_Upgrader::create_lock()`), and a batch only saves while it holds the lock. Starting or cancelling a scan breaks the lock, so a batch still running for the old scan can't save over the new one.
+- **Another plugin's PHP_CodeSniffer:** the scan names the plugin and waits. In a WP-Cron request that can be a coincidence, so it retries for 3 batches, then pauses with a Resume button and asks to deactivate that plugin while scanning.
+- **Paths:** they come from WordPress and must be inside the plugins directory or a theme directory, checked again on every batch.
+
+**Verdicts** come from the `update_plugins` and `update_themes` data WordPress stores when it checks for updates. Reading it makes no requests. Errors decide; warnings never block "Ready".
+- **Ready:** no errors.
+- **Update first:** WordPress lists a newer version, or has no update data for the installed version yet (just installed, or update checks failing). Updating is the cheapest next step either way, and the row says which case it is.
+- **No compatible version yet:** WordPress.org says it's the latest version.
+- **Needs a developer:** WordPress doesn't track it for updates, so it's custom code or from outside WordPress.org.
+
+Verdicts are worked out when the page shows them, so they follow WordPress's update checks without a new scan. Items updated or deactivated since the scan show "Scan again".
+
+**Skipped: marking possible false alarms.** Findings inside `function_exists()`, `class_exists()` or PHP version checks were to show as "possible false alarm" and not decide the verdict. That's more than a small change, because a simple version would hide real breaks:
+- `if ( ! class_exists( 'Foo' ) ) { class Foo { … } }` and `if ( ! function_exists( 'foo' ) ) { function foo() { … } }` are how bundled libraries and pluggable functions are declared, so the guarded code is the code that runs.
+- A guard only excuses a finding when it checks the very function or class the finding is about, such as `get_magic_quotes_gpc()` inside `if ( function_exists( 'get_magic_quotes_gpc' ) )`.
+- Version checks (`PHP_VERSION`, `PHP_VERSION_ID`, `version_compare()`) have to be evaluated against the target to know which branch runs there.
+- Syntax that no longer compiles, such as `$string{0}`, breaks the whole file whatever the guard.
+
+A safe version needs that symbol matching and version evaluation, with tests for each pattern: about 250 lines. Until then, plugins that bundle guarded legacy code get errors from it. In the end-to-end test, a plugin bundling WordPress's copy of getID3 gets "No compatible version yet" from 2 guarded calls to `get_magic_quotes_*()`. Worth building after launch if users report such false alarms.
+
+**End-to-end test** (`tests/e2e/run.sh`, about ten minutes), in the Docker WordPress with `exec()` disabled, a 30 s limit and 128 MB. The site has 35 plugins (3,593 PHP files, mostly WordPress core code split into 26 plugins) and a child theme, with update data set up for each verdict:
+- **Full scan for PHP 8.4:** 9 AJAX requests, the slowest 15.5 s, 113 s in all. Every verdict as expected, the 2.9 MB file reported as not checked, and every finding in the CSV.
+- **Another plugin's PHP_CodeSniffer:** the scan paused after 3 requests, naming the plugin. Once it was deactivated, Resume finished the scan.
+- **Cancel during a batch, then start again:** the new scan survives the old batch.
+- **Page closed after one batch:** WP-Cron, started by visitors' page loads, finished the scan in 110 s.
+
+`docker/apache/loopback.conf` lets the Docker WordPress reach itself at http://localhost:8080, which WP-Cron needs.
+
+**Notes for milestone 3**
+- **Plugin Check:** not run yet. downloads.wordpress.org is blocked in cloud sessions, so clone `WordPress/plugin-check` from GitHub.
+- **Release zip:** build with PHP-Scoper, and leave out `tests/`, `bin/`, `docker/` and the dev config files.
+- **Screenshots:** the end-to-end site shows every verdict.
+- **Without WP-Cron:** with `DISABLE_WP_CRON` and no real cron, scans only run while the page is open. The page says so.
 
 ## Numbers that decide what happens next
 
