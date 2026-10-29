@@ -68,7 +68,7 @@ The engine lives in `src/Scanner/`, with `bin/upgrade-radar` as its command-line
 - **Under host limits:** in the Docker WordPress, with `exec()` disabled, a 30 s limit and 128 MB, a site's plugins and themes plus a 1,301-file plugin took 4 requests of at most 15.2 s and 76 MB each.
 - **Real plugins:** no findings for Contact Form 7, Yoast SEO (3,257 files), Classic Editor, Akismet or the default themes. Elementor got 16 warnings, all real PHP 8.0 and 8.4 deprecations. 2015 versions of NextGEN Gallery, WP Super Cache and All in One SEO showed real breaks: `create_function()`, `$string{0}` and PHP 4 constructors.
 - **Bundled code that's guarded:** WordPress core still gets 4 errors and 14 warnings, for calls behind `function_exists()` or version checks, such as `get_magic_quotes_gpc()` in getID3. Plugins that bundle such libraries will show the same false alarms.
-- **Release size:** the vendor directory without tests and docs is 9.7 MB, about 2 MB zipped.
+- **Release size:** the vendor directory without tests and docs is 9.7 MB, about 2 MB zipped. The release zip must leave out `tests/`, `bin/` and `docker/`: the fixtures are PHP that's broken on purpose, which Plugin Check and possibly WordPress.org's SVN checks would reject.
 
 **Not detected by PHPCompatibility 10.0.0-alpha2:** passing null to non-nullable built-in parameters (8.1), dynamic properties (8.2), the `HTML-ENTITIES` mbstring encoding and callables such as `'self::method'` (8.2), and `++` on non-alphanumeric strings (8.3).
 
