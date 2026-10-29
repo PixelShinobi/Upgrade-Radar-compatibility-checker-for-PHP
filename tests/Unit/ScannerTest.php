@@ -221,9 +221,14 @@ final class ScannerTest extends TestCase {
 		copy( $vendor . '/squizlabs/php_codesniffer/autoload.php', $own . '/squizlabs/php_codesniffer/autoload.php' );
 		copy( $vendor . '/phpcsstandards/phpcsutils/phpcsutils-autoload.php', $own . '/phpcsstandards/phpcsutils/phpcsutils-autoload.php' );
 
-		$this->expectException( ScannerUnavailable::class );
-		$this->expectExceptionMessage( 'Another copy of squizlabs/php_codesniffer is already loaded' );
-		( new Scanner( array( 'vendor_dir' => $own ) ) )->scan_file( Fixtures::path( 'breaks' ), 'php80.php', TargetVersion::from_string( '8.3' ) );
+		try {
+			( new Scanner( array( 'vendor_dir' => $own ) ) )->scan_file( Fixtures::path( 'breaks' ), 'php80.php', TargetVersion::from_string( '8.3' ) );
+			$this->fail( 'The scan should have refused to run.' );
+		} catch ( ScannerUnavailable $e ) {
+			$this->assertSame( ScannerUnavailable::OTHER_COPY_LOADED, $e->getCode() );
+			$this->assertStringContainsString( 'Another copy of squizlabs/php_codesniffer is already loaded', $e->getMessage() );
+			$this->assertSame( realpath( $vendor . '/squizlabs/php_codesniffer/autoload.php' ), realpath( $e->other_copy_path() ) );
+		}
 	}
 
 	/**
@@ -231,6 +236,7 @@ final class ScannerTest extends TestCase {
 	 */
 	public function test_reports_a_missing_vendor_directory(): void {
 		$this->expectException( ScannerUnavailable::class );
+		$this->expectExceptionCode( ScannerUnavailable::BROKEN_INSTALL );
 		( new Scanner( array( 'vendor_dir' => Temp::dir() ) ) )->scan_file( Fixtures::path( 'breaks' ), 'php80.php', TargetVersion::from_string( '8.3' ) );
 	}
 

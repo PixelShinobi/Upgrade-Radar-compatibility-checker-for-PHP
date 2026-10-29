@@ -183,21 +183,25 @@ final class ScanJobTest extends TestCase {
 		$job = ScanJob::create( TargetVersion::from_string( '8.3' ), array( 'breaks' => Fixtures::path( 'breaks' ) ) );
 		$this->assertSame(
 			array(
-				'items_total' => 1,
-				'items_done'  => 0,
-				'files_found' => 0,
-				'files_done'  => 0,
-				'current'     => 'breaks',
+				'items_total'         => 1,
+				'items_done'          => 0,
+				'files_found'         => 0,
+				'files_done'          => 0,
+				'current'             => 'breaks',
+				'current_files_found' => 0,
+				'current_files_done'  => 0,
 			),
 			$job->progress()
 		);
 
 		$job->run_batch( self::scanner(), 2, INF );
-		$this->assertSame( array( 6, 2 ), array( $job->progress()['files_found'], $job->progress()['files_done'] ) );
+		$progress = $job->progress();
+		$this->assertSame( array( 6, 2, 6, 2 ), array( $progress['files_found'], $progress['files_done'], $progress['current_files_found'], $progress['current_files_done'] ) );
 		$this->assertSame( ScanJob::ITEM_PENDING, $job->results()[0]->status() );
 
 		$job->run_batch( self::scanner(), 10, INF );
-		$this->assertSame( array( 1, null ), array( $job->progress()['items_done'], $job->progress()['current'] ) );
+		$progress = $job->progress();
+		$this->assertSame( array( 1, null, 0, 0 ), array( $progress['items_done'], $progress['current'], $progress['current_files_found'], $progress['current_files_done'] ) );
 		$this->assertInstanceOf( ItemResult::class, $job->results()[0] );
 	}
 
