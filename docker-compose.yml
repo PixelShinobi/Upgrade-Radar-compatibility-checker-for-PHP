@@ -8,8 +8,9 @@
 #
 # The repo is mounted read-only as wp-content/plugins/upgrade-radar, and
 # docker/php/upgrade-radar.ini disables exec() and friends and sets a 30-second
-# max_execution_time, like a locked-down host. Set WORDPRESS_TAG to try another
-# PHP version, for example WORDPRESS_TAG=php8.1-apache.
+# max_execution_time, like a locked-down host. docker/apache/loopback.conf lets
+# WordPress reach itself at its own URL, so WP-Cron works. Set WORDPRESS_TAG to
+# try another PHP version, for example WORDPRESS_TAG=php8.1-apache.
 
 x-wordpress-env: &wordpress-env
   WORDPRESS_DB_HOST: db
@@ -47,6 +48,7 @@ services:
       - wordpress:/var/www/html
       - ./:/var/www/html/wp-content/plugins/upgrade-radar:ro
       - ./docker/php/upgrade-radar.ini:/usr/local/etc/php/conf.d/zz-upgrade-radar.ini:ro
+      - ./docker/apache/loopback.conf:/etc/apache2/conf-enabled/zz-upgrade-radar-loopback.conf:ro
 
   # WP-CLI, only started on demand: docker compose run --rm cli wp ...
   cli:
