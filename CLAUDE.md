@@ -54,6 +54,7 @@ Fixtures mark each expected finding at the end of its line with `// expect: erro
 - `tests/e2e/run.sh`: end-to-end test in that WordPress, about ten minutes. After its setup, don't run `wp plugin list` or `wp theme list`: they check for updates, which wipes the update data the verdicts are tested against.
 - `bin/build-release`: the release zip, `build/upgrade-radar.zip`. It must stay under 10 MB.
 - `tests/release/run.sh`: installs the release zip on a fresh WordPress at http://localhost:8081 and runs a full scan. Then `tests/release/plugin-check.sh` runs Plugin Check on it.
+- A release: set the version in `upgrade-radar.php`, `Plugin::VERSION` and readme.txt (stable tag and changelog), then push a tag such as `v1.0.1`. `.github/workflows/release.yml` checks the zip like CI and publishes it as that tag's GitHub release.
 
 ## Hard rules
 

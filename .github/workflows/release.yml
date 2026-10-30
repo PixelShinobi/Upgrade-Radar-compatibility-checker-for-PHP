@@ -1,0 +1,47 @@
+name: Release
+
+# Pushing a version tag, such as v1.0.0, builds the release zip, checks it
+# like CI's Release zip job (a full scan on a fresh WordPress, then Plugin
+# Check), and publishes it as that tag's GitHub release.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish the release zip
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - name: Check the tag matches the plugin's version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          grep -q "^ \* Version: *$version\$" upgrade-radar.php
+          grep -q "^Stable tag: $version\$" readme.txt
+      - run: tests/release/run.sh
+      - run: tests/release/plugin-check.sh
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          {
+            # This version's changelog entry from readme.txt.
+            awk -v heading="= $version =" '$0 == heading { on = 1; next } on && /^=/ { exit } on' readme.txt
+            echo "Install upgrade-radar.zip from Plugins → Add New → Upload Plugin."
+          } > build/notes.md
+          gh release create "$GITHUB_REF_NAME" build/upgrade-radar.zip --title "$GITHUB_REF_NAME" --notes-file build/notes.md
+      - name: WordPress logs
+        if: failure()
+        run: docker compose -f tests/release/docker-compose.yml logs --tail=200 wordpress

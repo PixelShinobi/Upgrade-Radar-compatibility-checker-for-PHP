@@ -146,6 +146,8 @@ A finding is a possible false alarm when the code it's in only runs if a guard h
 
   Installing Plugin Check makes WordPress forget its update data, so it runs after the scan.
 
+**GitHub releases:** pushing a version tag runs `.github/workflows/release.yml`. It checks the tag matches the plugin's version, runs the release check and Plugin Check on a fresh build, and publishes that zip as the tag's release, with the readme's changelog entry as its notes.
+
 **readme.txt:** description, installation, FAQ, screenshots and changelog, tested with WordPress 7.1.4. The FAQ says plainly that results can include false alarms, how possible false alarms are marked, and which PHP changes PHPCompatibility 10.0.0-alpha2 can't detect yet.
 
 **Assets** (`.wordpress-org/`, for the `assets` folder in the plugin's SVN): an original icon (256 and 128 px) and banner (1544×500 and 772×250), drawn as SVG (`source/`) and rendered to PNG with Chromium. The 3 screenshots come from the release check site: the verdicts for PHP 8.4, one plugin's problems with its possible false alarms, and a scan in progress.

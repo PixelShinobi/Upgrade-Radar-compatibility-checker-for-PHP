@@ -82,6 +82,8 @@ tests/release/plugin-check.sh
 
 `run.sh` installs the zip on a fresh WordPress at http://localhost:8081 and runs a full scan with it. `plugin-check.sh` then runs [Plugin Check](https://github.com/WordPress/plugin-check), the tool WordPress.org reviews plugins with, and fails on any finding, warnings included. CI runs both on pull requests. `docker compose -f tests/release/docker-compose.yml down -v` removes that WordPress.
 
+Pushing a version tag, such as `v1.0.0`, runs `.github/workflows/release.yml`: it builds the zip, runs both checks on it, and publishes it as that tag's GitHub release. The tag has to match the version in `upgrade-radar.php` and readme.txt's stable tag.
+
 The WordPress.org assets (icon, banner and screenshots) are in `.wordpress-org/`.
 
 ## How the scanner decides
