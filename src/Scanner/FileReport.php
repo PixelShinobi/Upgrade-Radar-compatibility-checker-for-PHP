@@ -295,8 +295,7 @@ final class FileReport {
 	 */
 	private static function check_reason( string $status, string $reason ): void {
 		if ( ! in_array( $reason, self::REASONS[ $status ], true ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-			throw new InvalidArgumentException( sprintf( 'Unknown reason "%s" for a %s file.', $reason, $status ) );
+			throw new InvalidArgumentException( sprintf( 'Unknown reason "%s" for a %s file.', $reason, $status ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 		}
 	}
 }

@@ -140,8 +140,7 @@ final class Runtime {
 		$autoload = $this->vendor_dir . '/squizlabs/php_codesniffer/autoload.php';
 		$utils    = $this->vendor_dir . '/phpcsstandards/phpcsutils/phpcsutils-autoload.php';
 		if ( ! is_readable( $autoload ) || ! is_readable( $utils ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-			throw ScannerUnavailable::broken_install( sprintf( 'PHP_CodeSniffer is missing from %s.', $this->vendor_dir ) );
+			throw ScannerUnavailable::broken_install( sprintf( 'PHP_CodeSniffer is missing from %s.', $this->vendor_dir ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 		}
 
 		require_once $autoload;
@@ -188,8 +187,7 @@ final class Runtime {
 			);
 		} catch ( Throwable $e ) {
 			$this->ruleset = null;
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-			throw ScannerUnavailable::broken_install( 'PHP_CodeSniffer could not load the ruleset: ' . trim( $e->getMessage() ), $e );
+			throw ScannerUnavailable::broken_install( 'PHP_CodeSniffer could not load the ruleset: ' . trim( $e->getMessage() ), $e ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 		}
 	}
 
@@ -218,8 +216,7 @@ final class Runtime {
 				$cached->setValue( null, null );
 			}
 		} catch ( ReflectionException $e ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-			throw ScannerUnavailable::broken_install( 'This PHPCompatibility version is not supported: ' . $e->getMessage(), $e );
+			throw ScannerUnavailable::broken_install( 'This PHPCompatibility version is not supported: ' . $e->getMessage(), $e ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 		}
 	}
 
@@ -246,8 +243,7 @@ final class Runtime {
 							if ( in_array( $source, self::HARMLESS_INTERNAL_MESSAGES, true ) ) {
 								continue;
 							}
-							// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-							throw new RuntimeException( (string) $message['message'] );
+							throw new RuntimeException( (string) $message['message'] ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 						}
 
 						$issues[] = new Issue( (int) $line, (int) $column, $type, (string) $message['message'], $source );
@@ -273,13 +269,11 @@ final class Runtime {
 		ob_start();
 		set_error_handler( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Restored below.
 			static function ( int $severity, string $message, string $file = '', int $line = 0 ): bool {
-				// Reads the level only, to respect the @ operator.
-				$reported = error_reporting(); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting, WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+				$reported = error_reporting(); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.prevent_path_disclosure_error_reporting, WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting, PluginCheck.CodeAnalysis.PHPErrorReporting.DirectErrorReportingCall -- Reads the level only, to respect the @ operator.
 				if ( 0 === ( $reported & $severity ) || E_DEPRECATED === $severity || E_USER_DEPRECATED === $severity ) {
 					return true;
 				}
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-				throw new ErrorException( $message, 0, $severity, $file, $line );
+				throw new ErrorException( $message, 0, $severity, $file, $line ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 			}
 		);
 
@@ -306,13 +300,11 @@ final class Runtime {
 		$actual   = class_exists( $class_name ) ? ( new ReflectionClass( $class_name ) )->getFileName() : false;
 
 		if ( false === $expected ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-			throw ScannerUnavailable::broken_install( sprintf( '%s is missing from %s.', $package, $this->vendor_dir ) );
+			throw ScannerUnavailable::broken_install( sprintf( '%s is missing from %s.', $package, $this->vendor_dir ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 		}
 
 		if ( false === $actual || 0 !== strpos( (string) realpath( $actual ), $expected . DIRECTORY_SEPARATOR ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-			throw ScannerUnavailable::other_copy_loaded( $package, false === $actual ? '' : $actual );
+			throw ScannerUnavailable::other_copy_loaded( $package, false === $actual ? '' : $actual ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 		}
 	}
 }

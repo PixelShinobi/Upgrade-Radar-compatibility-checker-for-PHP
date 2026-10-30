@@ -2,7 +2,7 @@
 
 A WordPress plugin that tells site owners whether their plugins and theme are ready for a newer PHP version, with one plain-English verdict per item.
 
-**Status:** milestones 1 (the scanning engine and a command-line tool) and 2 (the WordPress plugin) are done. Milestone 3 prepares the WordPress.org submission. v1 is targeted for the weekend of Oct 31 – Nov 1, 2026.
+**Status:** milestones 1 (the scanning engine and a command-line tool), 2 (the WordPress plugin) and 3 (the release build, readme and assets) are done, so the plugin is ready to submit to WordPress.org. v1 is targeted for the weekend of Oct 31 – Nov 1, 2026.
 
 - [`PLAN.md`](PLAN.md): why this, our angle, v1 scope, milestones and the numbers that decide what's next
 - [`CLAUDE.md`](CLAUDE.md): instructions for Claude Code sessions working in this repo
@@ -63,6 +63,28 @@ tests/e2e/run.sh
 ```
 
 It sets up that WordPress with 35 plugins and a child theme, then runs scans through the admin page's endpoints and checks the verdicts, the CSV, the 30-second limit, a rival plugin that loads its own PHP_CodeSniffer, cancelling, and WP-Cron finishing a scan after the page closes. It takes about ten minutes and changes the site, so run `docker compose down -v` afterwards.
+
+### Release build
+
+```bash
+bin/build-release
+```
+
+This builds `build/upgrade-radar.zip`, the zip to submit to WordPress.org. It holds only what users need. PHP_CodeSniffer, PHPCSUtils and PHPCompatibility are prefixed with `UpgradeRadarVendor\` by [PHP-Scoper](https://github.com/humbug/php-scoper), so they can't clash with another plugin's copy. Our own code goes in as it is in git, except for the names in `src/Scanner` that refer to those packages, which `bin/prefix-scanner.php` prefixes. The script checks the zip stays under WordPress.org's 10 MB limit. It needs PHP 8.2 or later for PHP-Scoper, plus Composer, git and zip.
+
+```bash
+tests/release/run.sh
+```
+
+```bash
+tests/release/plugin-check.sh
+```
+
+`run.sh` installs the zip on a fresh WordPress at http://localhost:8081 and runs a full scan with it. `plugin-check.sh` then runs [Plugin Check](https://github.com/WordPress/plugin-check), the tool WordPress.org reviews plugins with, and fails on any finding, warnings included. CI runs both on pull requests. `docker compose -f tests/release/docker-compose.yml down -v` removes that WordPress.
+
+Pushing a version tag, such as `v1.0.0`, runs `.github/workflows/release.yml`: it builds the zip, runs both checks on it, and publishes it as that tag's GitHub release. The tag has to match the version in `upgrade-radar.php` and readme.txt's stable tag.
+
+The WordPress.org assets (icon, banner and screenshots) are in `.wordpress-org/`.
 
 ## How the scanner decides
 

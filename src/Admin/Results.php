@@ -202,9 +202,9 @@ final class Results {
 					return __( "This isn't active any more, so these results may not matter.", 'upgrade-radar' );
 				}
 
-				/* translators: 1: version that was scanned, 2: version installed now. */
 				return '' === $row['current_version']
 					? __( 'This was changed since the scan. Scan again for an up-to-date verdict.', 'upgrade-radar' )
+					/* translators: 1: version that was scanned, 2: version installed now. */
 					: sprintf( __( 'Version %1$s was scanned, and %2$s is installed now. Scan again for an up-to-date verdict.', 'upgrade-radar' ), $row['version'], $row['current_version'] );
 
 			default:
@@ -220,9 +220,10 @@ final class Results {
 	 * @return string
 	 */
 	public static function false_alarm_format( Issue $issue ): string {
-		/* translators: 1: code of a condition, such as "PHP_VERSION_ID < 80000", 2: PHP version, such as 8.3. */
 		return $issue->guard_runs_if()
+			/* translators: 1: code of a condition, such as "PHP_VERSION_ID < 80000", 2: PHP version, such as 8.3. */
 			? __( 'Only runs if %1$s, which never happens on PHP %2$s.', 'upgrade-radar' )
+			/* translators: 1: code of a condition, such as "PHP_VERSION_ID >= 80000", 2: PHP version, such as 8.3. */
 			: __( 'Only runs if %1$s is false, which never happens on PHP %2$s.', 'upgrade-radar' );
 	}
 

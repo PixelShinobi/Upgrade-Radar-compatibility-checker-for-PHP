@@ -147,8 +147,7 @@ final class Scanner implements FileScanner {
 	public function scan_file( string $root, string $relative_path, TargetVersion $target ): FileReport {
 		$missing = self::missing_extensions();
 		if ( array() !== $missing ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-			throw new ScannerUnavailable( sprintf( 'These PHP extensions are missing: %s.', implode( ', ', $missing ) ), ScannerUnavailable::MISSING_EXTENSIONS );
+			throw new ScannerUnavailable( sprintf( 'These PHP extensions are missing: %s.', implode( ', ', $missing ) ), ScannerUnavailable::MISSING_EXTENSIONS ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 		}
 
 		$real_root = realpath( $root );

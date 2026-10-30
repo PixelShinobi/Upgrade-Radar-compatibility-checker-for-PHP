@@ -82,8 +82,7 @@ final class Issue {
 	 */
 	public function __construct( int $line, int $column, string $type, string $message, string $source ) {
 		if ( self::ERROR !== $type && self::WARNING !== $type ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
-			throw new InvalidArgumentException( sprintf( 'Unknown issue type "%s".', $type ) );
+			throw new InvalidArgumentException( sprintf( 'Unknown issue type "%s".', $type ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Plain text, escaped where it's shown.
 		}
 
 		$this->line    = $line;

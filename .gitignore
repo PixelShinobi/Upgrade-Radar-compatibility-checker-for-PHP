@@ -4,3 +4,6 @@
 .phpunit.cache/
 *.zip
 .DS_Store
+/build/
+/tools/*/vendor/
+/tools/plugin-check/

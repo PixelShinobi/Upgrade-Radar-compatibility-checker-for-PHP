@@ -1,0 +1,64 @@
+# A fresh WordPress for the release check, tests/release/run.sh. The release
+# zip is installed the way a user would, with no link to this repo's code,
+# under the same limits as docker-compose.yml: exec() disabled, 30 seconds
+# and 128 MB per request.
+#
+#   docker compose -f tests/release/docker-compose.yml down -v   removes it
+
+name: upgrade-radar-release
+
+x-wordpress-env: &wordpress-env
+  WORDPRESS_DB_HOST: db
+  WORDPRESS_DB_USER: wordpress
+  WORDPRESS_DB_PASSWORD: wordpress
+  WORDPRESS_DB_NAME: wordpress
+
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  wordpress:
+    image: wordpress:${WORDPRESS_TAG:-php8.3-apache}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+    environment:
+      <<: *wordpress-env
+      WORDPRESS_DEBUG: "1"
+    volumes:
+      - wordpress:/var/www/html
+      - ../../docker/php/upgrade-radar.ini:/usr/local/etc/php/conf.d/zz-upgrade-radar.ini:ro
+      - ./loopback.conf:/etc/apache2/conf-enabled/zz-upgrade-radar-loopback.conf:ro
+
+  # WP-CLI, with the zip in /release and this repo in /repo for the test site's setup.
+  cli:
+    image: wordpress:cli
+    profiles: ["tools"]
+    user: "33:33"
+    depends_on:
+      - wordpress
+    environment:
+      <<: *wordpress-env
+    volumes:
+      - wordpress:/var/www/html
+      - ../../build:/release:ro
+      - ../..:/repo:ro
+      - ../../docker/php/upgrade-radar.ini:/usr/local/etc/php/conf.d/zz-upgrade-radar.ini:ro
+
+volumes:
+  db:
+  wordpress:

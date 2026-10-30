@@ -53,33 +53,36 @@ function upgrade_radar_e2e_plugin( string $slug, string $name, string $version, 
 	return "$slug/$slug.php";
 }
 
-$upgrade_radar_e2e_fixtures = WP_PLUGIN_DIR . '/upgrade-radar/tests/fixtures';
+// This repo's fixtures and vendor directory, wherever the plugin is installed:
+// tests/release/run.sh installs the release zip, which has neither.
+$upgrade_radar_e2e_fixtures = dirname( __DIR__ ) . '/fixtures';
+$upgrade_radar_e2e_vendor   = dirname( __DIR__, 2 ) . '/vendor';
 
 // Left active if an earlier run stopped halfway.
 deactivate_plugins( 'ur-e2e-rival-scanner/ur-e2e-rival-scanner.php' );
 
 // Plugins with known breaks, each set up for a different verdict.
 $upgrade_radar_e2e_plugins = array(
-	'update_first'    => upgrade_radar_e2e_plugin( 'ur-e2e-legacy-forms', 'UR E2E Legacy Forms', '1.2', array( 'lib' => "$upgrade_radar_e2e_fixtures/breaks" ) ),
-	'no_compatible'   => upgrade_radar_e2e_plugin( 'ur-e2e-legacy-gallery', 'UR E2E Legacy Gallery', '3.1', array( 'lib/legacy.php' => "$upgrade_radar_e2e_fixtures/breaks/php80.php" ) ),
-	'needs_developer' => upgrade_radar_e2e_plugin( 'ur-e2e-custom-tools', 'UR E2E Custom Tools', '0.9', array( 'lib/legacy.php' => "$upgrade_radar_e2e_fixtures/breaks/php81.php" ) ),
-	'not_checked'     => upgrade_radar_e2e_plugin( 'ur-e2e-new-sliders', 'UR E2E New Sliders', '2.0', array( 'lib/legacy.php' => "$upgrade_radar_e2e_fixtures/breaks/php80.php" ) ),
-	'warnings_only'   => upgrade_radar_e2e_plugin( 'ur-e2e-deprecations', 'UR E2E Deprecations', '1.0', array( 'lib/deprecated.php' => "$upgrade_radar_e2e_fixtures/breaks/php84.php" ) ),
-	'guarded'         => upgrade_radar_e2e_plugin( 'ur-e2e-media-tools', 'UR E2E Media Tools', '4.0', array( 'lib/ID3' => ABSPATH . 'wp-includes/ID3' ) ),
-	'modern'          => upgrade_radar_e2e_plugin( 'ur-e2e-modern', 'UR E2E Modern', '5.0', array( 'lib' => "$upgrade_radar_e2e_fixtures/clean" ) ),
-	'big_data'        => upgrade_radar_e2e_plugin( 'ur-e2e-big-data', 'UR E2E Big Data', '1.0', array() ),
+	'update_first'    => upgrade_radar_e2e_plugin( 'ur-e2e-legacy-forms', 'Example Legacy Forms', '1.2', array( 'lib' => "$upgrade_radar_e2e_fixtures/breaks" ) ),
+	'no_compatible'   => upgrade_radar_e2e_plugin( 'ur-e2e-legacy-gallery', 'Example Legacy Gallery', '3.1', array( 'lib/legacy.php' => "$upgrade_radar_e2e_fixtures/breaks/php80.php" ) ),
+	'needs_developer' => upgrade_radar_e2e_plugin( 'ur-e2e-custom-tools', 'Example Custom Tools', '0.9', array( 'lib/legacy.php' => "$upgrade_radar_e2e_fixtures/breaks/php81.php" ) ),
+	'not_checked'     => upgrade_radar_e2e_plugin( 'ur-e2e-new-sliders', 'Example New Sliders', '2.0', array( 'lib/legacy.php' => "$upgrade_radar_e2e_fixtures/breaks/php80.php" ) ),
+	'warnings_only'   => upgrade_radar_e2e_plugin( 'ur-e2e-deprecations', 'Example Deprecations', '1.0', array( 'lib/deprecated.php' => "$upgrade_radar_e2e_fixtures/breaks/php84.php" ) ),
+	'guarded'         => upgrade_radar_e2e_plugin( 'ur-e2e-media-tools', 'Example Media Tools', '4.0', array( 'lib/ID3' => ABSPATH . 'wp-includes/ID3' ) ),
+	'modern'          => upgrade_radar_e2e_plugin( 'ur-e2e-modern', 'Example Modern', '5.0', array( 'lib' => "$upgrade_radar_e2e_fixtures/clean" ) ),
+	'big_data'        => upgrade_radar_e2e_plugin( 'ur-e2e-big-data', 'Example Big Data', '1.0', array() ),
 );
 
 // More than the 2 MB scan limit, so it's skipped as too large.
 file_put_contents( WP_PLUGIN_DIR . '/ur-e2e-big-data/data.php', "<?php\nreturn array(\n" . str_repeat( "\t'some-key' => 'some value',\n", 100000 ) . ");\n" );
 
 // A single-file plugin, with a function that would break on PHP 8 if it ran.
-file_put_contents( WP_PLUGIN_DIR . '/ur-e2e-single.php', "<?php\n/**\n * Plugin Name: UR E2E Single File\n * Version: 1.0\n */\n\ndefined( 'ABSPATH' ) || exit;\n\nfunction ur_e2e_single_next( \$items ) {\n\treturn each( \$items );\n}\n" );
+file_put_contents( WP_PLUGIN_DIR . '/ur-e2e-single.php', "<?php\n/**\n * Plugin Name: Example Single File\n * Version: 1.0\n */\n\ndefined( 'ABSPATH' ) || exit;\n\nfunction ur_e2e_single_next( \$items ) {\n\treturn each( \$items );\n}\n" );
 $upgrade_radar_e2e_plugins['single'] = 'ur-e2e-single.php';
 
 // 26 plugins of real WordPress code, overlapping slices of wp-includes and
 // wp-admin, for volume. Bundled libraries with guarded legacy calls are left
-// out: UR E2E Media Tools has getID3, whose findings are possible false alarms.
+// out: Example Media Tools has getID3, whose findings are possible false alarms.
 $upgrade_radar_e2e_core = array();
 foreach ( array( 'wp-includes', 'wp-admin' ) as $upgrade_radar_e2e_dir ) {
 	$upgrade_radar_e2e_files = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( ABSPATH . $upgrade_radar_e2e_dir, FilesystemIterator::SKIP_DOTS ) );
@@ -98,7 +101,7 @@ for ( $upgrade_radar_e2e_i = 1; $upgrade_radar_e2e_i <= 26; $upgrade_radar_e2e_i
 	foreach ( $upgrade_radar_e2e_slice as $upgrade_radar_e2e_relative ) {
 		$upgrade_radar_e2e_copy[ 'lib/' . $upgrade_radar_e2e_relative ] = ABSPATH . $upgrade_radar_e2e_relative;
 	}
-	$upgrade_radar_e2e_plugins[ "pack_$upgrade_radar_e2e_i" ] = upgrade_radar_e2e_plugin( sprintf( 'ur-e2e-pack-%02d', $upgrade_radar_e2e_i ), sprintf( 'UR E2E Pack %02d', $upgrade_radar_e2e_i ), '1.0', $upgrade_radar_e2e_copy );
+	$upgrade_radar_e2e_plugins[ "pack_$upgrade_radar_e2e_i" ] = upgrade_radar_e2e_plugin( sprintf( 'ur-e2e-pack-%02d', $upgrade_radar_e2e_i ), sprintf( 'Example Pack %02d', $upgrade_radar_e2e_i ), '1.0', $upgrade_radar_e2e_copy );
 }
 
 activate_plugins( array_values( $upgrade_radar_e2e_plugins ) );
@@ -106,14 +109,14 @@ activate_plugins( array_values( $upgrade_radar_e2e_plugins ) );
 // The rival: loads its own copy of PHP_CodeSniffer on every request, like a
 // scanner plugin with a sloppy autoloader would. Left inactive.
 $upgrade_radar_e2e_rival = WP_PLUGIN_DIR . '/ur-e2e-rival-scanner';
-upgrade_radar_e2e_copy( WP_PLUGIN_DIR . '/upgrade-radar/vendor/squizlabs/php_codesniffer/autoload.php', "$upgrade_radar_e2e_rival/vendor/squizlabs/php_codesniffer/autoload.php" );
-upgrade_radar_e2e_copy( WP_PLUGIN_DIR . '/upgrade-radar/vendor/squizlabs/php_codesniffer/src', "$upgrade_radar_e2e_rival/vendor/squizlabs/php_codesniffer/src" );
-file_put_contents( "$upgrade_radar_e2e_rival/ur-e2e-rival-scanner.php", "<?php\n/**\n * Plugin Name: UR E2E Rival Scanner\n * Version: 1.0\n */\n\ndefined( 'ABSPATH' ) || exit;\n\nrequire_once __DIR__ . '/vendor/squizlabs/php_codesniffer/autoload.php';\nclass_exists( 'PHP_CodeSniffer\\\\Autoload' );\n" );
+upgrade_radar_e2e_copy( "$upgrade_radar_e2e_vendor/squizlabs/php_codesniffer/autoload.php", "$upgrade_radar_e2e_rival/vendor/squizlabs/php_codesniffer/autoload.php" );
+upgrade_radar_e2e_copy( "$upgrade_radar_e2e_vendor/squizlabs/php_codesniffer/src", "$upgrade_radar_e2e_rival/vendor/squizlabs/php_codesniffer/src" );
+file_put_contents( "$upgrade_radar_e2e_rival/ur-e2e-rival-scanner.php", "<?php\n/**\n * Plugin Name: Example Rival Scanner\n * Version: 1.0\n */\n\ndefined( 'ABSPATH' ) || exit;\n\nrequire_once __DIR__ . '/vendor/squizlabs/php_codesniffer/autoload.php';\nclass_exists( 'PHP_CodeSniffer\\\\Autoload' );\n" );
 
 // A child theme of Twenty Twenty-Five, so the parent theme is scanned too.
 $upgrade_radar_e2e_child = get_theme_root() . '/ur-e2e-child';
 wp_mkdir_p( "$upgrade_radar_e2e_child/inc" );
-file_put_contents( "$upgrade_radar_e2e_child/style.css", "/*\nTheme Name: UR E2E Child\nTemplate: twentytwentyfive\nVersion: 1.0\n*/\n" );
+file_put_contents( "$upgrade_radar_e2e_child/style.css", "/*\nTheme Name: Example Child\nTemplate: twentytwentyfive\nVersion: 1.0\n*/\n" );
 file_put_contents( "$upgrade_radar_e2e_child/functions.php", "<?php\nadd_action( 'wp_enqueue_scripts', static function () {\n\twp_enqueue_style( 'ur-e2e-child', get_stylesheet_uri() );\n} );\n" );
 upgrade_radar_e2e_copy( "$upgrade_radar_e2e_fixtures/breaks/php82.php", "$upgrade_radar_e2e_child/inc/legacy.php" );
 switch_theme( 'ur-e2e-child' );
