@@ -45,6 +45,10 @@ Upgrade Radar includes PHP_CodeSniffer 3.13.6 (BSD-3-Clause license), and PHPCom
 
 Their namespaces start with UpgradeRadarVendor, so they can't clash with the copies other plugins bundle.
 
+= Source code and build tools =
+
+The source code, with its tests and build tools, is on GitHub: [github.com/PixelShinobi/Upgrade-Radar-compatibility-checker-for-PHP](https://github.com/PixelShinobi/Upgrade-Radar-compatibility-checker-for-PHP). The release zip is built by `bin/build-release`, which prefixes the bundled libraries' namespaces with PHP-Scoper.
+
 == Installation ==
 
 1. Install and activate the plugin from Plugins → Add New, or upload the zip file there.
