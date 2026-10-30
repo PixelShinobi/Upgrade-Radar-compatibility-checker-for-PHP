@@ -34,11 +34,13 @@ final class Csv {
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="upgrade-radar-php-' . sanitize_file_name( $target ) . '-' . gmdate( 'Y-m-d', (int) $scan['finished'] ) . '.csv"' );
 
-		$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Writes to the response, not a file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Writes to the response, not a file.
+		$out = fopen( 'php://output', 'w' );
 		foreach ( self::rows( Results::rows( $scan ), $target ) as $row ) {
 			fputcsv( $out, $row, ',', '"', '' );
 		}
-		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- See above.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closes the php://output stream opened above; WP_Filesystem has no equivalent for it.
+		fclose( $out );
 		exit;
 	}
 

@@ -95,11 +95,13 @@ USAGE;
 		try {
 			$options = $this->parse( $args );
 		} catch ( InvalidArgumentException $e ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Command-line runner writing to its own stdout/stderr; WP_Filesystem is for site files, not process streams.
 			fwrite( $this->stderr, 'upgrade-radar: ' . $e->getMessage() . PHP_EOL . 'Run "upgrade-radar --help" for usage.' . PHP_EOL );
 			return self::EXIT_USAGE;
 		}
 
 		if ( $options['help'] ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Command-line runner writing to its own stdout/stderr; WP_Filesystem is for site files, not process streams.
 			fwrite( $this->stdout, self::USAGE );
 			return self::EXIT_OK;
 		}
@@ -111,14 +113,17 @@ USAGE;
 				$this->show_progress( $job );
 			}
 		} catch ( ScannerUnavailable $e ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Command-line runner writing to its own stdout/stderr; WP_Filesystem is for site files, not process streams.
 			fwrite( $this->stderr, 'upgrade-radar: ' . $e->getMessage() . PHP_EOL );
 			return self::EXIT_UNAVAILABLE;
 		}
 
 		$results = $job->results();
 		if ( 'json' === $options['format'] ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Command-line runner writing to its own stdout/stderr; WP_Filesystem is for site files, not process streams.
 			fwrite( $this->stdout, $this->json( $job->target(), $results ) . PHP_EOL );
 		} else {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Command-line runner writing to its own stdout/stderr; WP_Filesystem is for site files, not process streams.
 			fwrite( $this->stdout, $this->text( $job->target(), $results, $options['summary'] ) );
 		}
 
@@ -162,6 +167,7 @@ USAGE;
 			} elseif ( ! $positional && preg_match( '/^--(php|format)(?:=(.*))?$/', $arg, $match ) ) {
 				$value = $match[2] ?? array_shift( $args );
 				if ( null === $value || '' === $value ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 					throw new InvalidArgumentException( sprintf( 'Option --%s needs a value.', $match[1] ) );
 				}
 
@@ -170,9 +176,11 @@ USAGE;
 				} elseif ( in_array( $value, array( 'text', 'json' ), true ) ) {
 					$options['format'] = $value;
 				} else {
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 					throw new InvalidArgumentException( sprintf( 'Unknown format "%s". Use "text" or "json".', $value ) );
 				}
 			} elseif ( ! $positional && '-' === substr( $arg, 0, 1 ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 				throw new InvalidArgumentException( sprintf( 'Unknown option "%s".', $arg ) );
 			} elseif ( null === $command ) {
 				$command = $arg;
@@ -186,6 +194,7 @@ USAGE;
 		}
 
 		if ( 'scan' !== $command ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 			throw new InvalidArgumentException( null === $command ? 'Missing the "scan" command.' : sprintf( 'Unknown command "%s".', $command ) );
 		}
 
@@ -200,6 +209,7 @@ USAGE;
 
 		foreach ( $options['paths'] as $path ) {
 			if ( ! is_readable( $path ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message, not output; anything shown in wp-admin is escaped there.
 				throw new InvalidArgumentException( sprintf( 'Not a readable file or directory: %s', $path ) );
 			}
 		}
@@ -219,6 +229,7 @@ USAGE;
 
 		$progress = $job->progress();
 		$line     = $job->is_done() ? '' : sprintf( 'Scanning %s, %d files checked so far', $progress['current'], $progress['files_done'] );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Command-line runner writing to its own stdout/stderr; WP_Filesystem is for site files, not process streams.
 		fwrite( $this->stderr, "\r\033[K" . $line );
 	}
 

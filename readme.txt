@@ -50,6 +50,7 @@ Their namespaces start with UpgradeRadarVendor, so they can't clash with the cop
 1. Install and activate the plugin from Plugins → Add New, or upload the zip file there.
 2. Go to Tools → Upgrade Radar.
 3. Pick the PHP version you want to move to, and click Scan now.
+4. When the scan finishes, each plugin and theme shows its verdict. Open an item to see its problems by file and line, or download every finding as a CSV file.
 
 Scans need the tokenizer and SimpleXML PHP extensions, which almost every host has. The page tells you if one is missing.
 
@@ -58,6 +59,10 @@ Scans need the tokenizer and SimpleXML PHP extensions, which almost every host h
 = Which PHP versions can I check? =
 
 PHP 8.1, 8.2, 8.3, 8.4 and 8.5. The page suggests the next version above the one your site runs.
+
+= My host disables exec() and has a 30-second time limit. Will it work? =
+
+Yes, that's what Upgrade Radar is built for. It runs PHP_CodeSniffer inside WordPress, without exec(), and scans in short batches that each stay well under the time limit.
 
 = Can I trust the results? Are there false alarms? =
 
@@ -87,6 +92,10 @@ These are all deprecations, so they don't break your site on that version, but t
 
 Upgrade Radar also doesn't check plugins and themes that aren't active, must-use plugins or drop-ins, and it skips files bigger than 2 MB or too big for your server's memory. The results say which files weren't checked.
 
+= Does it change anything on my site? =
+
+No. Scans only read files. Upgrade Radar keeps its scan progress and results in its own options, and removes them when you uninstall it.
+
 = Does it send my data anywhere? =
 
 No. Upgrade Radar makes no outside requests. Verdicts come from the update information WordPress already stores when it checks for updates.
@@ -111,6 +120,10 @@ When the page is closed, the scan runs on WP-Cron, which needs visits to your si
 
 Users who can manage options, which is administrators by default.
 
+= Another plugin I use also bundles PHP_CodeSniffer. Is that a problem? =
+
+No. Upgrade Radar's copies of PHP_CodeSniffer and its rules have their own namespace, so they can't clash with another plugin's copy.
+
 == Screenshots ==
 
 1. One verdict per plugin and theme for the PHP version you picked, with counts at the top.
@@ -121,3 +134,13 @@ Users who can manage options, which is administrators by default.
 
 = 1.0.0 =
 * First release.
+* Scan the active plugins, the active theme and its parent theme for a target PHP version (8.1 to 8.5).
+* One plain-English verdict per item — Ready, Update first, No compatible version yet, Needs a developer — worked out from WordPress's own update data.
+* Problems listed by file and line, with a CSV export of every finding.
+* Findings behind version or existence checks that can never trigger on the target are marked as possible false alarms and don't decide the verdict.
+* Background scans in short, resumable batches (admin page or WP-Cron) that run on any host: in-process, no `exec()` needed.
+
+== Upgrade Notice ==
+
+= 1.0.0 =
+First release of Upgrade Radar.

@@ -108,10 +108,8 @@ Verdicts are worked out when the page shows them, so they follow WordPress's upd
 `docker/apache/loopback.conf` lets the Docker WordPress reach itself at http://localhost:8080, which WP-Cron needs.
 
 **Notes for milestone 3**
-- **Plugin Check:** not run yet. downloads.wordpress.org is blocked in cloud sessions, so clone `WordPress/plugin-check` from GitHub.
-- **Release zip:** build with PHP-Scoper, and leave out `tests/`, `bin/`, `docker/` and the dev config files.
-- **Screenshots:** the end-to-end site shows every verdict.
-- **Without WP-Cron:** with `DISABLE_WP_CRON` and no real cron, scans only run while the page is open. The page says so.
+
+All addressed — see Milestone 3 results. One caveat stands: without WP-Cron (`DISABLE_WP_CRON` and no real cron), scans only run while the page is open. The page says so.
 
 ## Possible false alarms
 
@@ -135,7 +133,7 @@ A finding is a possible false alarm when the code it's in only runs if a guard h
 
 **What's in the zip:** the plugin's own files, `composer.json` (reviewers look there to see where `vendor/` comes from), and the production dependencies without their tests, docs and scripts. Not `tests/` (the fixtures are PHP that's broken on purpose), `bin/`, `docker/`, `tools/`, `.github/`, `.wordpress-org/`, the docs or the dev config. `src/Scanner/Cli.php` stays out too: only `bin/upgrade-radar` uses it.
 
-**Prefixing:** PHP-Scoper prefixes PHP_CodeSniffer, PHPCSUtils and PHPCompatibility with `UpgradeRadarVendor\`, as milestone 1 tried. It reprints every file it prefixes. That's fine for the dependencies but not for our code: it dropped our coding standard and moved `phpcs:ignore` comments to other lines, where Plugin Check no longer saw them. So our code skips PHP-Scoper: `bin/prefix-scanner.php` prefixes the 10 names in `src/Scanner` that refer to the dependencies (9 imports and a class name in a string) and stops on any namespace it doesn't know. The rest of `src/` goes in as it is: it uses WordPress classes such as `WP_Theme`, which PHP-Scoper would have prefixed too. A Composer classmap autoloads the prefixed classes.
+**Prefixing:** PHP-Scoper prefixes PHP_CodeSniffer, PHPCSUtils and PHPCompatibility with `UpgradeRadarVendor\`, as milestone 1 tried. It reprints every file it prefixes. That's fine for the dependencies but not for our code: it dropped our coding standard and moved `phpcs:ignore` comments to other lines, where Plugin Check no longer saw them. So our code skips PHP-Scoper: `bin/prefix-scanner.php` prefixes the 10 names in `src/Scanner` that refer to the dependencies (9 imports and a class name in a string) and stops on any namespace it doesn't know. The rest of `src/` goes in as it is. A build that ran all of `src/` through PHP-Scoper, tried in parallel, showed why: it prefixed the `WP_Theme` type hint in `Jobs\Inventory` (a fatal error once a scan starts) and the `'get_plugins'` strings in `function_exists()` checks, so every WordPress name had to be listed as an exception. Its reprint also moved comments: the `phpcs:ignore` ones left 13 Plugin Check warnings, and moving the translators comments to fit it failed our lint. A Composer classmap autoloads the prefixed classes.
 
 **Checks on the zip**
 - **Fixtures:** the built plugin gives the same findings as the development copy in all 40 fixture scans, on PHP 7.4 and 8.3, also with another plugin's unprefixed PHP_CodeSniffer loaded first.
