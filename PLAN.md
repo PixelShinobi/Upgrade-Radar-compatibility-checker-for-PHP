@@ -146,7 +146,7 @@ A finding is a possible false alarm when the code it's in only runs if a guard h
 
   Installing Plugin Check makes WordPress forget its update data, so it runs after the scan.
 
-**GitHub releases:** pushing a version tag runs `.github/workflows/release.yml`. It checks the tag matches the plugin's version, runs the release check and Plugin Check on a fresh build, and publishes that zip as the tag's release, with the readme's changelog entry as its notes.
+**GitHub releases:** `.github/workflows/release.yml` runs the release check and Plugin Check on a fresh build and publishes that zip as the release `v<version>`, with the readme's changelog entry as its notes. It runs from the Actions tab, tagging the commit itself, or when a matching version tag is pushed.
 
 **readme.txt:** description, installation, FAQ, screenshots and changelog, tested with WordPress 7.1.4. The FAQ says plainly that results can include false alarms, how possible false alarms are marked, and which PHP changes PHPCompatibility 10.0.0-alpha2 can't detect yet.
 

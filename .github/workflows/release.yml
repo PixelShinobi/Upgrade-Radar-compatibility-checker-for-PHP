@@ -1,13 +1,17 @@
 name: Release
 
-# Pushing a version tag, such as v1.0.0, builds the release zip, checks it
-# like CI's Release zip job (a full scan on a fresh WordPress, then Plugin
-# Check), and publishes it as that tag's GitHub release.
+# Builds the release zip, checks it like CI's Release zip job (a full scan
+# on a fresh WordPress, then Plugin Check), and publishes it as a GitHub
+# release, tagged v<version> after the version in upgrade-radar.php.
+#
+# Runs when a version tag such as v1.0.0 is pushed, which must match that
+# version, or from the Actions tab, which tags the commit it runs on.
 
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -24,24 +28,29 @@ jobs:
           php-version: "8.3"
           coverage: none
       - run: composer install --no-interaction --no-progress
-      - name: Check the tag matches the plugin's version
+      - name: Check the version
+        id: version
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          grep -q "^ \* Version: *$version\$" upgrade-radar.php
+          version=$(sed -n 's/^ \* Version: *//p' upgrade-radar.php)
           grep -q "^Stable tag: $version\$" readme.txt
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "The tag $GITHUB_REF_NAME doesn't match the plugin's version, $version." >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - run: tests/release/run.sh
       - run: tests/release/plugin-check.sh
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
           {
             # This version's changelog entry from readme.txt.
-            awk -v heading="= $version =" '$0 == heading { on = 1; next } on && /^=/ { exit } on' readme.txt
+            awk -v heading="= $VERSION =" '$0 == heading { on = 1; next } on && /^=/ { exit } on' readme.txt
             echo "Install upgrade-radar.zip from Plugins → Add New → Upload Plugin."
           } > build/notes.md
-          gh release create "$GITHUB_REF_NAME" build/upgrade-radar.zip --title "$GITHUB_REF_NAME" --notes-file build/notes.md
+          gh release create "v$VERSION" build/upgrade-radar.zip --target "$GITHUB_SHA" --title "v$VERSION" --notes-file build/notes.md
       - name: WordPress logs
         if: failure()
         run: docker compose -f tests/release/docker-compose.yml logs --tail=200 wordpress
