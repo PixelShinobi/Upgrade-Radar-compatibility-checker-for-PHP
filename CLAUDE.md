@@ -27,7 +27,6 @@ src/Admin/                Tools → Upgrade Radar: page, AJAX step, form actions
 src/Jobs/                 resumable background batching (WordPress side of ScanJob): store, lock, inventory
 assets/                   the admin page's script and styles
 uninstall.php             removes the plugin's options and scheduled event
-src/Cli/                  WP-CLI command (optional in v1)
 bin/upgrade-radar         standalone CLI for the engine, no WordPress needed
 bin/build-release         builds build/upgrade-radar.zip: prefixed with PHP-Scoper, only what users need
 bin/prefix-scanner.php    used by bin/build-release: prefixes the dependencies' names in src/Scanner, changing nothing else

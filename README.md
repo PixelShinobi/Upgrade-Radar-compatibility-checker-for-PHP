@@ -2,7 +2,7 @@
 
 A WordPress plugin that tells site owners whether their plugins and theme are ready for a newer PHP version, with one plain-English verdict per item.
 
-**Status:** milestones 1 (the scanning engine and a command-line tool), 2 (the WordPress plugin) and 3 (the release build, readme and assets) are done, so the plugin is ready to submit to WordPress.org. v1 is targeted for the weekend of Oct 31 – Nov 1, 2026.
+**Status:** milestones 1 (the scanning engine and a command-line tool), 2 (the WordPress plugin) and 3 (the release build, readme and assets) are done. v1.0.0 was submitted to WordPress.org on Nov 7, 2026 and is awaiting review.
 
 - [`PLAN.md`](PLAN.md): why this, our angle, v1 scope, milestones and the numbers that decide what's next
 - [`CLAUDE.md`](CLAUDE.md): instructions for Claude Code sessions working in this repo

@@ -1,6 +1,6 @@
 # Upgrade Radar: Plan
 
-_Upgrade Radar – compatibility checker for PHP. Last updated Oct 29, 2026._
+_Upgrade Radar – compatibility checker for PHP. Last updated Nov 7, 2026._
 
 ## Why this, why now
 
@@ -46,7 +46,7 @@ _Upgrade Radar – compatibility checker for PHP. Last updated Oct 29, 2026._
 
 1. **Engine:** a WordPress-free scanner library plus a CLI, tested on fixture code with known PHP 8.1–8.4 breaks. **Done Oct 29**, see [Milestone 1 results](#milestone-1-results).
 2. **Plugin:** admin screen, background batching and results UI; manual test in a Docker WordPress. **Done Oct 29**, see [Milestone 2 results](#milestone-2-results).
-3. **Submit:** readme.txt and screenshots, a clean Plugin Check run, then submit to WordPress.org. **Ready to submit Oct 29**, see [Milestone 3 results](#milestone-3-results). Submitting is the owner's step.
+3. **Submit:** readme.txt and screenshots, a clean Plugin Check run, then submit to WordPress.org. **Submitted to WordPress.org Nov 7, 2026** (v1.0.0, awaiting review), see [Milestone 3 results](#milestone-3-results).
 4. **Launch watch:** track installs, reviews and support threads.
 5. **Paid service:** only if the numbers below say so.
 
