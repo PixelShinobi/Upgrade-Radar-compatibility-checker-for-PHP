@@ -85,6 +85,13 @@ cp "$stage/composer.json" "$out/composer.json"
 rm -rf "$out/vendor/bin" "$out/vendor/composer/installers" "$out/vendor/scoper-autoload.php"
 find "$out/vendor" \( -name '.*' -o -name '*.md' -o -name '*.dist' -o -name 'composer.json' -o -name 'composer.lock' \) -not -iname 'licen*' -not -path "$out/vendor" -exec rm -rf {} +
 
+# The plugin must never run another program (scoper.inc.php leaves those
+# parts of PHP_CodeSniffer out), so no such call may be left in the zip.
+if ! php bin/check-no-exec.php "$out"; then
+	echo "The release zip calls another program (above)." >&2
+	exit 1
+fi
+
 echo "Zipping..."
 (cd "$build" && zip -qr "$zip_file" upgrade-radar)
 
