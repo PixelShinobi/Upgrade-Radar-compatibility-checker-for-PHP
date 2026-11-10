@@ -30,6 +30,7 @@ uninstall.php             removes the plugin's options and scheduled event
 bin/upgrade-radar         standalone CLI for the engine, no WordPress needed
 bin/build-release         builds build/upgrade-radar.zip: prefixed with PHP-Scoper, only what users need
 bin/prefix-scanner.php    used by bin/build-release: prefixes the dependencies' names in src/Scanner, changing nothing else
+bin/check-no-exec.php     used by bin/build-release: fails if a PHP file in the zip calls exec() or another program
 tests/Unit/               PHPUnit tests for the engine and the verdicts
 tests/fixtures/           breaks/phpXY.php (changes from PHP X.Y), clean/, edge/ and guards/ sample code
 tests/e2e/                end-to-end test in the Docker WordPress (run.sh, setup.php, scan.php)
@@ -57,7 +58,7 @@ Fixtures mark each expected finding at the end of its line with `// expect: erro
 
 ## Hard rules
 
-- **No `exec()`, `shell_exec()`, `proc_open()`, `system()` or `passthru()`.** Run PHP_CodeSniffer in-process. Working on hosts that disable these functions is our main edge over Eli's scanner.
+- **No `exec()`, `shell_exec()`, `proc_open()`, `system()` or `passthru()`.** Run PHP_CodeSniffer in-process. Working on hosts that disable these functions is our main edge over Eli's scanner. The release zip holds no such call either: `scoper.inc.php` leaves out the PHP_CodeSniffer files that run other programs and replaces the few calls left with their fallbacks, and `bin/build-release` checks.
 - **Scan in batches** (a few files or one plugin per request or cron tick) so a scan never hits `max_execution_time`. Scans must be resumable.
 - **Read-only.** Never modify scanned files, and only read inside `wp-content/plugins` and the active theme's directory.
 - **No outside HTTP calls in the free plugin.** Anything external later must be opt-in and documented in readme.txt (Guideline 7).

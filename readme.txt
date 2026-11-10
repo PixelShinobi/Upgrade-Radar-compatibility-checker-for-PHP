@@ -43,7 +43,7 @@ It checks the active plugins, including network-activated ones, the active theme
 
 Upgrade Radar includes PHP_CodeSniffer 3.13.6 (BSD-3-Clause license), and PHPCompatibility 10.0.0-alpha2, PHPCompatibilityWP 3.0.0-alpha2, PHPCompatibilityParagonie 2.0.0-alpha2 and PHPCSUtils 1.2.3 (LGPL-3.0-or-later license). Thank you to their authors.
 
-Their namespaces start with UpgradeRadarVendor, so they can't clash with the copies other plugins bundle.
+Their namespaces start with UpgradeRadarVendor, so they can't clash with the copies other plugins bundle. The parts of PHP_CodeSniffer that run other programs, which only its command-line tool uses, are left out.
 
 = Source code and build tools =
 
